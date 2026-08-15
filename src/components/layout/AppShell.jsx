@@ -53,6 +53,7 @@ export default function AppShell({ children }) {
             <span className="text-sm font-medium text-gray-300 font-display tracking-tight">
               CPENT Reference
             </span>
+            <span className="text-[10px] text-gray-600 font-mono">v7</span>
           </div>
           <ExamTimer examMode={examMode} />
         </header>

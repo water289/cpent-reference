@@ -10,6 +10,8 @@ import { getZoneColor, getOSBadgeColor, getTypeBadgeColor } from '../../utils/fi
 import { getRelatedTechniques } from '../../utils/dataHelpers'
 import CommandBlock from './CommandBlock'
 
+const BUILD_CACHE_BUST = 'v6'
+
 export default function ToolDetail() {
   const { toolId } = useParams()
   const { data } = useDatabase()
