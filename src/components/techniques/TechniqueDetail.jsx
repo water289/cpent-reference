@@ -48,7 +48,7 @@ export default function TechniqueDetail() {
             <span className={`text-xs ${getNoisinessColor(technique.noisiness)}`}>{technique.noisiness}</span>
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight mb-2">{technique.name}</h1>
-          <p className="text-gray-400 text-lg leading-relaxed">{technique.description}</p>
+           <p className="text-gray-400 text-lg leading-relaxed">{technique.description || technique.purpose}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button

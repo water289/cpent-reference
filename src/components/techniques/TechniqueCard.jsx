@@ -39,7 +39,7 @@ export default function TechniqueCard({ technique, viewMode = 'grid' }) {
               ))}
               <span className="text-xs text-amber-400">{getDifficultyStars(technique.difficulty || 1)}</span>
             </div>
-            <p className="text-sm text-gray-400 line-clamp-1 mb-1">{technique.description}</p>
+            <p className="text-sm text-gray-400 line-clamp-1 mb-1">{technique.description || technique.purpose}</p>
             {technique.whenToUse && (
               <p className="text-xs text-amber-300 line-clamp-1">⚠ {technique.whenToUse}</p>
             )}
@@ -92,7 +92,7 @@ export default function TechniqueCard({ technique, viewMode = 'grid' }) {
         <Link to={`/techniques/${technique.id}`} onClick={handleView}>{technique.name}</Link>
       </h3>
 
-      <p className="text-sm text-gray-400 mb-4 line-clamp-2 flex-1 leading-relaxed">{technique.description}</p>
+      <p className="text-sm text-gray-400 mb-4 line-clamp-2 flex-1 leading-relaxed">{technique.description || technique.purpose}</p>
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {technique.tags?.slice(0, 6).map(tag => (

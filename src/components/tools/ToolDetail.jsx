@@ -79,7 +79,7 @@ export default function ToolDetail() {
           Description
         </h2>
         <div className="glass-panel rounded-2xl p-6 border border-white/[0.06]">
-          <p className="text-gray-300 leading-relaxed">{tool.description}</p>
+          <p className="text-gray-300 leading-relaxed">{tool.description || tool.purpose}</p>
         </div>
       </section>
 
@@ -111,7 +111,7 @@ export default function ToolDetail() {
                 className="block glass-panel rounded-xl p-5 hover:border-white/[0.12] transition-all border border-white/[0.06]"
               >
                 <h3 className="font-medium text-white hover:text-accent-gold transition-colors mb-1.5">{tech.name}</h3>
-                <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">{tech.description}</p>
+                <p className="text-sm text-gray-400 line-clamp-3 leading-relaxed">{tech.description || tech.purpose}</p>
               </Link>
             ))}
           </div>
