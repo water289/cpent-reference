@@ -90,28 +90,36 @@ export default function TechniqueDetail() {
           Procedure ({steps.length} steps)
         </h2>
         <div className="space-y-4">
-          {steps.map((step, idx) => (
-            <div key={idx} className="glass-panel rounded-xl overflow-hidden border border-white/[0.06]">
-              <div className="px-5 py-3.5 bg-white/[0.02] border-b border-white/[0.06] flex items-center gap-3">
-                <span className="flex items-center justify-center w-7 h-7 bg-accent-gold text-black rounded-lg text-xs font-bold">
-                  {step.order || idx + 1}
-                </span>
-                <h3 className="text-sm font-medium text-white leading-relaxed">{step.description}</h3>
+          {steps.map((step, idx) => {
+            const isObj = typeof step === 'object'
+            const stepText = isObj ? (step.description || step.text || '') : step
+            const stepCommand = isObj ? step.command : null
+            const stepNote = isObj ? step.note : null
+            const stepOrder = isObj ? (step.order || idx + 1) : idx + 1
+
+            return (
+              <div key={idx} className="glass-panel rounded-xl overflow-hidden border border-white/[0.06]">
+                <div className="px-5 py-3.5 bg-white/[0.02] border-b border-white/[0.06] flex items-center gap-3">
+                  <span className="flex items-center justify-center w-7 h-7 bg-accent-gold text-black rounded-lg text-xs font-bold">
+                    {stepOrder}
+                  </span>
+                  <h3 className="text-sm font-medium text-white leading-relaxed">{stepText}</h3>
+                </div>
+                <div className="p-5">
+                  {stepCommand && (
+                    <CommandBlock
+                      command={{ label: stepText, command: stepCommand, when: '', output: stepNote || '' }}
+                      zone={technique.zone}
+                      zoneColor={zoneColor}
+                    />
+                  )}
+                  {stepNote && !stepCommand && (
+                    <p className="text-sm text-gray-400 leading-relaxed">{stepNote}</p>
+                  )}
+                </div>
               </div>
-              <div className="p-5">
-                {step.command && (
-                  <CommandBlock
-                    command={{ label: step.description, command: step.command, when: '', output: step.note || '' }}
-                    zone={technique.zone}
-                    zoneColor={zoneColor}
-                  />
-                )}
-                {step.note && !step.command && (
-                  <p className="text-sm text-gray-400 leading-relaxed">{step.note}</p>
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
