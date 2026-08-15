@@ -8833,7 +8833,8 @@
     "color": "red",
     "zones": [
       "web"
-    ]
+    ],
+    "description": "Bypass login forms using SQL injection in credentials"
   },
   {
     "id": "tech:xss-reflected",
@@ -8883,7 +8884,8 @@
     "color": "orange",
     "zones": [
       "web"
-    ]
+    ],
+    "description": "Inject malicious JS via URL parameters that execute in browser"
   },
   {
     "id": "tech:csrf",
@@ -8933,7 +8935,8 @@
     "color": "yellow",
     "zones": [
       "web"
-    ]
+    ],
+    "description": "Trick authenticated user into performing unwanted actions"
   },
   {
     "id": "tech:ssrf",
@@ -8983,7 +8986,8 @@
     "color": "purple",
     "zones": [
       "web"
-    ]
+    ],
+    "description": "Force server to make requests to internal or external systems"
   },
   {
     "id": "tech:idor",
@@ -9033,7 +9037,8 @@
     "color": "blue",
     "zones": [
       "web"
-    ]
+    ],
+    "description": "Access unauthorized data by manipulating object references"
   },
   {
     "id": "tech:broken-access-control",
@@ -9083,7 +9088,8 @@
     "color": "red",
     "zones": [
       "web"
-    ]
+    ],
+    "description": "Exploit improper restrictions on user actions"
   },
   {
     "id": "tech:password-spraying",
@@ -9133,7 +9139,8 @@
     "color": "darkred",
     "zones": [
       "auth"
-    ]
+    ],
+    "description": "Use common passwords against many accounts to avoid lockouts"
   },
   {
     "id": "tech:kerberoasting",
@@ -9181,7 +9188,8 @@
     "color": "orange",
     "zones": [
       "auth"
-    ]
+    ],
+    "description": "Extract service account hashes from Kerberos tickets"
   },
   {
     "id": "tech:ntlm-cracking",
@@ -9230,7 +9238,8 @@
     "color": "darkred",
     "zones": [
       "auth"
-    ]
+    ],
+    "description": "Crack captured NTLM hashes using dictionary or brute force"
   },
   {
     "id": "tech:llmnr-nbtspoofing",
@@ -9278,7 +9287,8 @@
     "color": "orange",
     "zones": [
       "auth"
-    ]
+    ],
+    "description": "Poison LLMNR/NBT-NS name resolution to capture hashes"
   },
   {
     "id": "tech:ps-remoting",
@@ -9327,7 +9337,8 @@
     "color": "blue",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Execute commands on remote Windows hosts via WinRM"
   },
   {
     "id": "tech:ssh-lateral",
@@ -9376,7 +9387,8 @@
     "color": "gray",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Use stolen SSH credentials or keys to move between hosts"
   },
   {
     "id": "tech:pass-the-hash",
@@ -9425,7 +9437,8 @@
     "color": "darkred",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Authenticate using NTLM hash without knowing the password"
   },
   {
     "id": "tech:psexec",
@@ -9474,7 +9487,8 @@
     "color": "blue",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Execute commands remotely via Windows SMB service"
   },
   {
     "id": "tech:wmi-lateral",
@@ -9522,7 +9536,8 @@
     "color": "blue",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Use Windows Management Instrumentation for remote execution"
   },
   {
     "id": "tech:sudo-lpe",
@@ -9571,7 +9586,8 @@
     "color": "orange",
     "zones": [
       "priv-esc"
-    ]
+    ],
+    "description": "Exploit misconfigured sudo rules or SUID binaries for root"
   },
   {
     "id": "tech:kernel-exploit",
@@ -9619,7 +9635,8 @@
     "color": "red",
     "zones": [
       "priv-esc"
-    ]
+    ],
+    "description": "Exploit kernel vulnerabilities to escalate privileges"
   },
   {
     "id": "tech:linux-docker-escape",
@@ -9667,7 +9684,8 @@
     "color": "purple",
     "zones": [
       "priv-esc"
-    ]
+    ],
+    "description": "Escape Docker containers to gain host access"
   },
   {
     "id": "tech:unquoted-service",
@@ -9715,7 +9733,8 @@
     "color": "orange",
     "zones": [
       "priv-esc"
-    ]
+    ],
+    "description": "Exploit unquoted service paths with spaces for privilege escalation"
   },
   {
     "id": "tech:jenkins-script",
@@ -9763,7 +9782,8 @@
     "color": "darkred",
     "zones": [
       "exploit"
-    ]
+    ],
+    "description": "Exploit Jenkins script console for RCE"
   },
   {
     "id": "tech:mimikatz",
@@ -9811,7 +9831,8 @@
     "color": "darkred",
     "zones": [
       "priv-esc"
-    ]
+    ],
+    "description": "Extract plaintext passwords, hashes, and Kerberos tickets"
   },
   {
     "id": "tech:powerview",
@@ -9859,7 +9880,8 @@
     "color": "blue",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Enumerate Active Directory domain for attack paths"
   },
   {
     "id": "tech:lsass-dump",
@@ -9907,7 +9929,8 @@
     "color": "red",
     "zones": [
       "priv-esc"
-    ]
+    ],
+    "description": "Dump LSASS process memory to extract credentials"
   },
   {
     "id": "tech:persistence-registry",
@@ -9955,7 +9978,8 @@
     "color": "orange",
     "zones": [
       "exploit"
-    ]
+    ],
+    "description": "Create persistent backdoor via Windows registry autorun"
   },
   {
     "id": "tech:persistence-cron",
@@ -10003,7 +10027,8 @@
     "color": "gray",
     "zones": [
       "exploit"
-    ]
+    ],
+    "description": "Use cron jobs as persistence mechanism on Linux systems"
   },
   {
     "id": "tech:socks-proxy",
@@ -10052,7 +10077,8 @@
     "color": "blue",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Set up SOCKS proxy through compromised host for internal browsing"
   },
   {
     "id": "tech:port-forwarding",
@@ -10101,7 +10127,8 @@
     "color": "purple",
     "zones": [
       "network"
-    ]
+    ],
+    "description": "Access internal services by forwarding ports through compromised hosts"
   },
   {
     "id": "tech:sshuttle",
@@ -10150,7 +10177,8 @@
     "color": "blue",
     "zones": [
       "lateral"
-    ]
+    ],
+    "description": "Transparent proxy/VPN over SSH for routing traffic through target networks"
   },
   {
     "id": "tech:cloud-metadata",
@@ -10199,6 +10227,7 @@
     "color": "blue",
     "zones": [
       "exploit"
-    ]
+    ],
+    "description": "Exploit exposed cloud metadata endpoints for credential theft"
   }
 ]
