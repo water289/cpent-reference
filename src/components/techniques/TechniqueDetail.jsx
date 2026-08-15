@@ -83,7 +83,10 @@ export default function TechniqueDetail() {
       )}
 
       <section>
-        <h2 className="text-xl font-semibold text-white mb-3">Procedure ({steps.length} steps)</h2>
+        <h2 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+          <Terminal className="w-5 h-5 text-gray-400" />
+          Procedure ({steps.length} steps)
+        </h2>
         <div className="space-y-4">
           {steps.map((step, idx) => (
             <div key={idx} className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">

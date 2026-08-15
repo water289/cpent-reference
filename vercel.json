@@ -1,8 +1,5 @@
 {
   "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/cpent-reference/(.*)", "destination": "/$1" }
-  ],
   "github": {
     "enabled": true
   }

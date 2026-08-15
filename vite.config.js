@@ -28,7 +28,7 @@ export default defineConfig({
       }
     })
   ],
-  base: '/cpent-reference/',
+  base: '/',
   server: {
     port: 3000,
     open: true

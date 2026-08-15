@@ -32,6 +32,7 @@ export default function App() {
         <Route path="/bookmarks" element={<BookmarksPage />} />
         <Route path="/exam" element={<ExamMode />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<Dashboard />} />
       </Routes>
     </AppShell>
   )

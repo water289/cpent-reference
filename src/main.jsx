@@ -5,12 +5,9 @@ import App from './App.jsx'
 import { AppProvider } from './context/AppContext.jsx'
 import './index.css'
 
-const isVercel = window.location.hostname.includes('vercel.app') || window.location.hostname === 'localhost'
-const basename = isVercel ? '/' : '/cpent-reference'
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename={basename}>
+    <BrowserRouter>
       <AppProvider>
         <App />
       </AppProvider>

@@ -4,6 +4,7 @@ import { useBookmarks } from '../../hooks/useBookmarks'
 import { useDatabase } from '../../context/AppContext'
 import ToolCard from '../tools/ToolCard'
 import TechniqueCard from '../techniques/TechniqueCard'
+import Breadcrumb from '../ui/Breadcrumb'
 import { groupByZone } from '../../utils/dataHelpers'
 import { getZoneColor } from '../../utils/filters'
 
@@ -46,16 +47,20 @@ export default function BookmarksPage() {
       <div className="text-center py-16">
         <BookmarkX className="w-12 h-12 text-gray-600 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-white mb-2">No Bookmarks Yet</h2>
-        <p className="text-gray-400">Start bookmarking tools and techniques to see them here.</p>
+        <p className="text-gray-400 max-w-md mx-auto">
+          Start bookmarking tools and techniques to see them here.
+          Use the bookmark button on any tool or technique page to save it for later.
+        </p>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={[{ path: null, label: 'Bookmarks' }]} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Bookmarks</h1>
+          <h1 className="text-3xl font-bold text-white mt-1">Bookmarks</h1>
           <p className="text-gray-400 mt-1">{bookmarks.length} bookmarked item{bookmarks.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-3">

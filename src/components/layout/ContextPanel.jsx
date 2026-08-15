@@ -2,6 +2,7 @@ import { useApp } from '../../context/AppContext'
 import { useHistory } from '../../hooks/useHistory'
 import { useBookmarks } from '../../hooks/useBookmarks'
 import { ChevronLeft, ChevronRight, Clock, Bookmark, FileText } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export default function ContextPanel({ className = '' }) {
   const { contextPanelOpen, setContextPanelOpen } = useApp()
@@ -54,12 +55,12 @@ export default function ContextPanel({ className = '' }) {
               <ul className="space-y-2">
                 {history.map(item => (
                   <li key={`${item.id}-${item.viewedAt}`}>
-                    <a
-                      href={item.path}
+                    <Link
+                      to={item.path}
                       className="block text-sm text-gray-300 hover:text-accent-primary transition-colors truncate"
                     >
                       {item.name}
-                    </a>
+                    </Link>
                     <span className="text-xs text-gray-500 capitalize">{item.type}</span>
                   </li>
                 ))}

@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
-import { Grid, List } from 'lucide-react'
+import { Grid, List, BookOpen } from 'lucide-react'
 import TechniqueCard from '../techniques/TechniqueCard'
 import FilterPanel from '../ui/FilterPanel'
+import Breadcrumb from '../ui/Breadcrumb'
 import { useDatabase } from '../../context/AppContext'
 import { useFilteredItems, getAllTags, getUniqueValues } from '../../utils/filters'
 
@@ -33,7 +34,10 @@ export default function TechniquesPage() {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-white">Techniques</h1>
+          <div>
+            <Breadcrumb items={[{ path: null, label: 'Techniques' }]} />
+            <h1 className="text-2xl font-bold text-white mt-1">Techniques</h1>
+          </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg p-1">
               <button
@@ -67,8 +71,15 @@ export default function TechniquesPage() {
         <p className="text-sm text-gray-400 mb-4">{filteredTechniques.length} technique{filteredTechniques.length !== 1 ? 's' : ''}</p>
 
         {filteredTechniques.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            No techniques match your filters
+          <div className="text-center py-16 bg-gray-800/30 border border-gray-700 rounded-lg">
+            <BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+            <h3 className="text-lg font-medium text-gray-300 mb-1">No techniques match your filters</h3>
+            <button
+              onClick={() => setFilters({})}
+              className="text-sm text-accent-primary hover:text-accent-primary/80"
+            >
+              Clear all filters
+            </button>
           </div>
         ) : (
           <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>

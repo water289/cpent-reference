@@ -223,7 +223,7 @@ export default function StrategyPage() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[{ path: '/strategy', label: 'Strategy' }]} />
+      <Breadcrumb items={[{ path: null, label: 'Exam Strategy' }]} />
 
       {!selectedStrat ? (
         <>
@@ -238,7 +238,10 @@ export default function StrategyPage() {
           </div>
 
           <section className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Exam Mental Model</h2>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+              <Target className="w-5 h-5 text-gray-400" />
+              Exam Mental Model
+            </h2>
             <p className="text-sm text-gray-400 mb-4">{EXAM_MENTAL_MODEL.description}</p>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               {EXAM_MENTAL_MODEL.phases.map((p) => (

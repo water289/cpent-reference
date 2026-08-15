@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Terminal, ArrowRight, BookOpen, GitBranch, Target, FileText } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import SearchBar from '../search/SearchBar'
 import ZoneMap from '../zones/ZoneMap'
 import { useHistory } from '../../hooks/useHistory'
@@ -75,15 +75,15 @@ export default function Dashboard() {
       <section className="text-center py-12">
         <div className="inline-flex items-center gap-2 mb-6">
           <Terminal className="w-8 h-8 text-accent-primary" />
-          <h1 className="text-4xl font-bold text-white font-display">CPENT Reference</h1>
+          <h1 className="text-4xl font-bold text-white">CPENT Reference</h1>
         </div>
         <p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
           Interactive command reference for the EC-Council CPENT exam.
           Master every zone, tool, and technique with Argha Dey methodology workflows.
         </p>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-8 max-w-xl mx-auto">
-          <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8 max-w-xl mx-auto shadow-xl">
+          <div className="flex items-center gap-2 text-sm text-gray-400 mb-3">
             <Terminal className="w-4 h-4" />
             <span>kali@cpent:~</span>
           </div>
@@ -99,10 +99,10 @@ export default function Dashboard() {
 
         <div className="flex items-center justify-center gap-6 mt-6 text-xs text-gray-500">
           <span className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-xs">Cmd</kbd>+<kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-xs">K</kbd> Search
+            <kbd className="shortcut-key">Cmd</kbd>+<kbd className="shortcut-key">K</kbd> Search
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-xs">Cmd</kbd>+<kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-xs">E</kbd> Exam Mode
+            <kbd className="shortcut-key">Cmd</kbd>+<kbd className="shortcut-key">E</kbd> Exam Mode
           </span>
         </div>
       </section>
@@ -120,27 +120,27 @@ export default function Dashboard() {
         <ZoneMap />
       </section>
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-white">{tools.length}</div>
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-5 text-center">
+          <div className="text-3xl font-bold text-white">{tools.length}</div>
           <div className="text-xs text-gray-400 mt-1">Tools</div>
         </div>
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-white">{techniques.length}</div>
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-5 text-center">
+          <div className="text-3xl font-bold text-white">{techniques.length}</div>
           <div className="text-xs text-gray-400 mt-1">Techniques</div>
         </div>
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-white">{zones.length}</div>
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-5 text-center">
+          <div className="text-3xl font-bold text-white">{zones.length}</div>
           <div className="text-xs text-gray-400 mt-1">Zones</div>
         </div>
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-accent-primary">{workflows.length}</div>
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-5 text-center">
+          <div className="text-3xl font-bold text-accent-primary">{workflows.length}</div>
           <div className="text-xs text-gray-400 mt-1">Workflows</div>
         </div>
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
             <FileText className="w-4 h-4 text-amber-400" />
             Argha Dey Methodologies ({arghaWorkflows.length})
@@ -157,7 +157,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
             <Target className="w-4 h-4 text-gray-400" />
             Standard Workflows ({workflows.length - arghaWorkflows.length})
@@ -177,12 +177,20 @@ export default function Dashboard() {
 
       {history.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold text-white mb-3">Recently Viewed</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-white">Recently Viewed</h2>
+            <Link
+              to="/settings"
+              className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              Manage history
+            </Link>
+          </div>
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg divide-y divide-gray-700">
             {history.map(item => (
-              <a
+              <Link
                 key={item.id}
-                href={item.path}
+                to={item.path}
                 className="flex items-center justify-between px-4 py-3 hover:bg-gray-700/30 transition-colors"
               >
                 <div>
@@ -190,7 +198,7 @@ export default function Dashboard() {
                   <span className="text-xs text-gray-500 ml-2 capitalize">{item.type}</span>
                 </div>
                 <ArrowRight className="w-4 h-4 text-gray-500" />
-              </a>
+              </Link>
             ))}
           </div>
         </section>

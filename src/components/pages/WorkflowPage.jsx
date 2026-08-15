@@ -5,6 +5,7 @@ import { getItemById } from '../../utils/dataHelpers'
 import { getZoneColor } from '../../utils/filters'
 import CommandBlock from '../tools/CommandBlock'
 import SourceBadge from '../ui/SourceBadge'
+import Breadcrumb from '../ui/Breadcrumb'
 import {
   ChevronRight, CheckCircle2, Clipboard, Copy, FileText, Printer, Radar
 } from 'lucide-react'
@@ -232,7 +233,10 @@ export default function WorkflowPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Workflows</h1>
+        <div>
+          <Breadcrumb items={[{ path: null, label: 'Workflows' }]} />
+          <h1 className="text-3xl font-bold text-white mt-1">Workflows</h1>
+        </div>
         <button
           onClick={handlePrint}
           className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white hover:border-gray-600 transition-colors"
@@ -244,23 +248,23 @@ export default function WorkflowPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1 space-y-6">
-          <div>
+          <section>
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
               Argha Dey Methodologies ({arghaWorkflows.length})
             </h2>
             <div className="space-y-2">
               {arghaWorkflows.map(renderWorkflowCard)}
             </div>
-          </div>
+          </section>
 
-          <div>
+          <section>
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
               Standard Workflows ({standardWorkflows.length})
             </h2>
             <div className="space-y-2">
               {standardWorkflows.map(renderWorkflowCard)}
             </div>
-          </div>
+          </section>
         </div>
 
         <div className="lg:col-span-3">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import MainContent from './MainContent'
 import ContextPanel from './ContextPanel'
@@ -10,6 +10,7 @@ import { useApp } from '../../context/AppContext'
 export default function AppShell({ children }) {
   const { examMode, sidebarOpen, contextPanelOpen } = useApp()
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const location = useLocation()
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -21,6 +22,10 @@ export default function AppShell({ children }) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
+
+  useEffect(() => {
+    setPaletteOpen(false)
+  }, [location])
 
   return (
     <div className={`
@@ -35,16 +40,24 @@ export default function AppShell({ children }) {
           ${contextPanelOpen ? 'mr-72' : 'mr-0'}
         `}
       >
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
-          <div className="text-sm text-gray-400 font-mono">CPENT Reference</div>
+        <header className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-800 no-print">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400 font-mono">CPENT Reference</span>
+          </div>
           <ExamTimer examMode={examMode} />
-        </div>
+        </header>
         <MainContent className={`
           ${examMode ? 'bg-white' : 'bg-gray-900'}
           transition-colors duration-300
         `}>
           {children || <Outlet />}
         </MainContent>
+        <footer className="no-print px-4 py-2 bg-gray-800 border-t border-gray-800">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>CPENT Reference — Interactive Exam Cheat Sheet</span>
+            <span>Built with Argha Dey 94% methodology</span>
+          </div>
+        </footer>
       </div>
       <ContextPanel />
       {paletteOpen && (

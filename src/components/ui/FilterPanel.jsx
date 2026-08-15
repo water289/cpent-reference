@@ -1,10 +1,15 @@
 import { useState, useMemo } from 'react'
-import { X, RotateCcw } from 'lucide-react'
+import { X, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import { getUniqueValues, getAllTags } from '../../utils/filters'
 import Badge from './Badge'
 
 export default function FilterPanel({ filters, onFilterChange, items, availableFilters = {} }) {
-  const [expanded, setExpanded] = useState(true)
+  const [sections, setSections] = useState({
+    zone: true,
+    os: true,
+    type: true,
+    tags: true,
+  })
 
   const allZones = useMemo(() => availableFilters.zones || getUniqueValues(items, 'zone'), [items, availableFilters.zones])
   const allOS = useMemo(() => availableFilters.os || getUniqueValues(items, 'os'), [items, availableFilters.os])
@@ -23,20 +28,28 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
     onFilterChange({})
   }
 
+  const toggleSection = (section) => {
+    setSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+
   const activeFilterCount = Object.values(filters).reduce((count, arr) => {
     return count + (Array.isArray(arr) ? arr.length : 0)
   }, 0)
 
-  const FilterSection = ({ title, children }) => (
+  const FilterSection = ({ title, section, children }) => (
     <div className="border-b border-gray-700 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0">
       <button
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => toggleSection(section)}
         className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-300 hover:text-white transition-colors"
       >
-        {title}
-        <span className="text-xs text-gray-500">{expanded ? '▼' : '▶'}</span>
+        <span>{title}</span>
+        {sections[section] ? (
+          <ChevronDown className="w-4 h-4 text-gray-500" />
+        ) : (
+          <ChevronRight className="w-4 h-4 text-gray-500" />
+        )}
       </button>
-      {expanded && <div className="mt-2 space-y-1.5">{children}</div>}
+      {sections[section] && <div className="mt-2 space-y-1.5">{children}</div>}
     </div>
   )
 
@@ -77,7 +90,7 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
         </div>
       )}
 
-      <FilterSection title="Zone">
+      <FilterSection title="Zone" section="zone">
         {allZones.map(zone => (
           <label key={zone} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white cursor-pointer">
             <input
@@ -91,7 +104,7 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
         ))}
       </FilterSection>
 
-      <FilterSection title="OS">
+      <FilterSection title="OS" section="os">
         {allOS.map(os => (
           <label key={os} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white cursor-pointer">
             <input
@@ -105,7 +118,7 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
         ))}
       </FilterSection>
 
-      <FilterSection title="Type">
+      <FilterSection title="Type" section="type">
         {allTypes.map(type => (
           <label key={type} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white cursor-pointer">
             <input
@@ -119,7 +132,7 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
         ))}
       </FilterSection>
 
-      <FilterSection title="Tags">
+      <FilterSection title="Tags" section="tags">
         <div className="flex flex-wrap gap-1">
           {allTags.slice(0, 15).map(tag => (
             <button

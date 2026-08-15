@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Download, Upload, Trash2, RotateCcw, Moon, Sun, Monitor } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import Breadcrumb from '../ui/Breadcrumb'
 
 export default function Settings() {
   const navigate = useNavigate()
@@ -82,8 +83,9 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      <Breadcrumb items={[{ path: null, label: 'Settings' }]} />
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white">Settings</h1>
+        <h1 className="text-3xl font-bold text-white mt-1">Settings</h1>
       </div>
 
       {message && (

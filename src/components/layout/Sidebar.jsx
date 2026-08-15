@@ -1,27 +1,28 @@
 import { Link, useLocation } from 'react-router-dom'
-  import {
-    LayoutDashboard,
-    Search,
-    Shield,
-    Network,
-    Globe,
-    Cpu,
-    Server,
-    Flag,
-    BookOpen,
-    Bookmark,
-    GitBranch,
-    FileText,
-    Terminal,
-    Settings,
-    ChevronLeft,
-    ChevronRight,
-    Radar,
-    Lock,
-    Unlock,
-    Clock,
-    Target,
-  } from 'lucide-react'
+import {
+  LayoutDashboard,
+  Search,
+  Shield,
+  Network,
+  Globe,
+  Cpu,
+  Server,
+  Flag,
+  BookOpen,
+  Bookmark,
+  GitBranch,
+  FileText,
+  Terminal,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+  Radar,
+  Lock,
+  Unlock,
+  Clock,
+  Target,
+  Menu,
+} from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { getZoneColor } from '../../utils/filters'
 
@@ -53,7 +54,7 @@ export default function Sidebar({ className = '' }) {
         className="absolute top-4 left-4 z-50 p-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-colors no-print"
         aria-label="Open sidebar"
       >
-        <ChevronRight className="w-5 h-5" />
+        <Menu className="w-5 h-5" />
       </button>
     )
   }
@@ -116,28 +117,31 @@ export default function Sidebar({ className = '' }) {
                 Exam Zones
               </span>
             </li>
-            {Object.entries(ZONE_ICONS).map(([zoneId, Icon]) => (
-              <li key={zoneId}>
-                <Link
-                  to={`/zones/${zoneId}`}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    location.pathname.includes(zoneId)
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
-                  }`}
-                  style={location.pathname.includes(zoneId) ? {
-                    borderLeft: `3px solid ${getZoneColor(zoneId)}`,
-                    paddingLeft: '0.625rem',
-                  } : {}}
-                >
-                  <Icon
-                    className="w-4 h-4"
-                    style={{ color: location.pathname.includes(zoneId) ? getZoneColor(zoneId) : '#9CA3AF' }}
-                  />
-                  {zoneId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                </Link>
-              </li>
-            ))}
+            {Object.entries(ZONE_ICONS).map(([zoneId, Icon]) => {
+              const isActive = location.pathname.includes(zoneId)
+              return (
+                <li key={zoneId}>
+                  <Link
+                    to={`/zones/${zoneId}`}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? 'bg-gray-800 text-white'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    }`}
+                    style={isActive ? {
+                      borderLeft: `3px solid ${getZoneColor(zoneId)}`,
+                      paddingLeft: '0.625rem',
+                    } : {}}
+                  >
+                    <Icon
+                      className="w-4 h-4"
+                      style={{ color: isActive ? getZoneColor(zoneId) : '#9CA3AF' }}
+                    />
+                    {zoneId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </Link>
+                </li>
+              )
+            })}
 
             <li className="pt-3 pb-1">
               <span className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">

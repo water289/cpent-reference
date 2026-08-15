@@ -88,7 +88,7 @@ export default function TechniqueCard({ technique, viewMode = 'grid' }) {
         </button>
       </div>
 
-      <h3 className="text-lg font-semibold text-white group-hover:text-accent-primary transition-colors mb-1">
+      <h3 className="text-lg font-semibold text-white group-hover:text-accent-primary transition-colors mb-1.5">
         <Link to={`/techniques/${technique.id}`} onClick={handleView}>{technique.name}</Link>
       </h3>
 
@@ -96,7 +96,7 @@ export default function TechniqueCard({ technique, viewMode = 'grid' }) {
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {technique.tags?.slice(0, 6).map(tag => (
-          <button key={tag} onClick={() => handleTagClick(tag)} className="px-2 py-0.5 bg-gray-700 text-gray-300 rounded text-xs hover:text-accent-primary transition-colors">{tag}</button>
+          <button key={tag} onClick={() => handleTagClick(tag)} className="px-2 py-0.5 bg-gray-700/50 text-gray-300 rounded text-xs hover:text-accent-primary hover:bg-gray-700 transition-colors">{tag}</button>
         ))}
       </div>
 

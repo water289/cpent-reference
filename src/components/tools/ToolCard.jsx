@@ -89,15 +89,15 @@ export default function ToolCard({ tool, viewMode = 'grid' }) {
         </button>
       </div>
 
-      <h3 className="text-lg font-semibold text-white group-hover:text-accent-primary transition-colors mb-1">
+      <h3 className="text-lg font-semibold text-white group-hover:text-accent-primary transition-colors mb-1.5">
         <Link to={`/tools/${tool.id}`} onClick={handleView}>{tool.name}</Link>
       </h3>
 
-      <p className="text-sm text-gray-400 mb-4 line-clamp-2 flex-1">{tool.purpose || tool.description}</p>
+      <p className="text-sm text-gray-400 mb-3 line-clamp-2 flex-1">{tool.purpose || tool.description}</p>
 
       {tool.commands?.[0] && (
         <div className="mb-4">
-          <code className="block bg-gray-900 border border-gray-700 rounded px-3 py-2 text-xs text-gray-300 font-mono break-all line-clamp-3">
+          <code className="block bg-gray-900 border border-gray-700 rounded px-3 py-2 text-xs text-gray-400 font-mono break-all line-clamp-3">
             {tool.commands[0].command}
           </code>
         </div>
@@ -105,7 +105,7 @@ export default function ToolCard({ tool, viewMode = 'grid' }) {
 
       <div className="flex flex-wrap gap-1.5 mb-4">
         {tool.tags?.slice(0, 6).map(tag => (
-          <button key={tag} onClick={() => handleTagClick(tag)} className="px-2 py-0.5 bg-gray-700 text-gray-300 rounded text-xs hover:text-accent-primary transition-colors">{tag}</button>
+          <button key={tag} onClick={() => handleTagClick(tag)} className="px-2 py-0.5 bg-gray-700/50 text-gray-300 rounded text-xs hover:text-accent-primary hover:bg-gray-700 transition-colors">{tag}</button>
         ))}
       </div>
 

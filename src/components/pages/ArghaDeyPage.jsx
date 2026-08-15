@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useDatabase } from '../../context/AppContext'
 import { getItemById } from '../../utils/dataHelpers'
 import CommandBlock from '../tools/CommandBlock'
+import Breadcrumb from '../ui/Breadcrumb'
 import { getZoneColor } from '../../utils/filters'
 import { ChevronRight, FileText, Clipboard, Copy, CheckCircle2, Circle } from 'lucide-react'
 
@@ -23,7 +24,8 @@ export default function ArghaDeyPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-white">Argha Dey Methodology</h1>
+        <Breadcrumb items={[{ path: null, label: 'Argha Dey Methodology' }]} />
+        <h1 className="text-3xl font-bold text-white mt-1">Argha Dey Methodology</h1>
         <p className="text-gray-400 mt-2">
           Proven 94% scorer CPENT methodology workflows. Each methodology maps the full engagement path
           with exam-tested shortcuts and decision trees.
@@ -49,21 +51,22 @@ export default function ArghaDeyPage() {
                       : 'border-gray-700 bg-gray-800/30 hover:border-gray-600 hover:bg-gray-700/40'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: zoneColor }}
-                    />
-                    <span className="text-xs font-medium text-gray-400 uppercase">{wf.zone}</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: zoneColor }} />
+                      <span className="text-xs font-medium text-gray-400 uppercase">{wf.zone}</span>
+                    </div>
+                    {wf.steps?.length && (
+                      <span className="text-xs text-gray-500">{wf.steps.length} steps</span>
+                    )}
                   </div>
                   <h3 className="font-medium text-white text-sm">{wf.name}</h3>
                   <p className="text-xs text-gray-500 mt-1 line-clamp-2">{wf.description}</p>
-                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    <span>{wf.steps?.length || 0} steps</span>
-                    {wf.examHabits && Array.isArray(wf.examHabits) && wf.examHabits.length > 0 && (
-                      <span>{wf.examHabits.length} habits</span>
-                    )}
-                  </div>
+                  {wf.examHabits && Array.isArray(wf.examHabits) && wf.examHabits.length > 0 && (
+                    <span className="text-xs text-amber-400 mt-2 block">
+                      {wf.examHabits.length} exam habits
+                    </span>
+                  )}
                 </button>
               )
             })}

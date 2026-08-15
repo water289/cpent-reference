@@ -5,7 +5,7 @@ export default function MainContent({ children, className = '' }) {
       px-4 py-6 md:px-6 lg:px-8
       ${className}
     `}>
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl w-full">
         {children}
       </div>
     </main>
