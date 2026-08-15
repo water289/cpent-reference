@@ -25,7 +25,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# State reports (regenerated)
+# State reports (CURRENT_* are generated, keep only PROJECT_STATE_REPORT.md in repo)
 CURRENT_DATA_STATUS_REPORT.md
 CURRENT_STATE_REPORT.md
-PROJECT_STATE_REPORT.md
