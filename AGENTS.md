@@ -27,7 +27,7 @@ python3 scripts/fill_empty_data.py    # Fill missing install/purpose/command/ste
 python3 scripts/normalize_tools.py    # Normalize tool schema (commands[], install.kali)
 python3 scripts/normalize_zones.py    # Remap zone fields to valid zone IDs
 python3 scripts/build_crossrefs.py    # Build relatedTools/relatedTechniques cross-refs
-node scripts/parseSourceFiles.cjs    # Merge workflow JSONs into workflows.json
+node scripts/parseSourceFiles.cjs     # Merge workflow JSONs into workflows.json (run before build)
 ```
 
 ## Data Model
