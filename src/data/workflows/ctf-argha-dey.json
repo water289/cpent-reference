@@ -1,0 +1,149 @@
+{
+  "id": "ctf-argha-dey-methodology",
+  "zone": "ctf",
+  "name": "Argha Dey CTF Challenge Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Systematic approach to CTF challenges covering cryptography, steganography, forensics, and web exploitation. Based on patterns observed in CPENT-style CTF challenges.",
+  "examHabits": [
+    "steghide steghide steghide — try the same passphrase multiple times",
+    "Check metadata with exiftool on every file first",
+    "Try CyberChef for common encodings (base64, base32, URL, hex, ROT13, binary, Morse)",
+    "binwalk -e firmware/images to extract embedded files, then examine each",
+    "XOR with common keys: 0x41 (A), 0x20 (space), single-byte bruteforce"
+  ],
+  "quickRef": "file <target> | binwalk -e <target> | steghide extract -sf <file> -p <pass> | exiftool <file> | cyberchef decode",
+  "steps": [
+    {
+      "phase": "Phase 1 - Initial File Analysis",
+      "tools": ["file", "exiftool", "binwalk", "strings"],
+      "techniques": ["steganography"],
+      "decisionPoints": [
+        {
+          "condition": "File type unknown",
+          "action": "file <target> — identify true file type (magic bytes can lie)",
+          "fallback": "Check file size: ls -la and compare against expected content"
+        },
+        {
+          "condition": "Image file received",
+          "action": "exiftool <file> — look for hidden comments, GPS data, embedded credentials",
+          "fallback": "binwalk <file> — check for appended data or embedded archives"
+        },
+        {
+          "condition": "Binary or firmware received",
+          "action": "binwalk -eM <file> — extract and recursively analyze embedded files",
+          "fallback": "strings -a <file> | grep -i 'flag\\|key\\|pass\\|ctf' for plaintext hints"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Decoding & Encoding Challenges",
+      "tools": ["cyberchef", "python"],
+      "techniques": ["crypto-analysis"],
+      "decisionPoints": [
+        {
+          "condition": "Base64-looking string found (A-Za-z0-9+/=)",
+          "action": "echo '<string>' | base64 -d — or use CyberChef 'From Base64' recipe",
+          "fallback": "Try base32, base85, URL-decode, hex-decode in sequence"
+        },
+        {
+          "condition": "ROT13 or Caesar cipher suspected",
+          "action": "CyberChef 'ROT13' or try all 26 shifts with python -c one-liner",
+          "fallback": "Check if text reads like English at any shift"
+        },
+        {
+          "condition": "Hex string found (0x-prefixed or pairs of hex chars)",
+          "action": "echo '<hex>' | xxd -r -p — or CyberChef 'From Hex'",
+          "fallback": "Check if decoded hex is another encoded layer"
+        },
+        {
+          "condition": "Morse code detected (... --- ...)",
+          "action": "CyberChef 'From Morse Code' — watch for proper spacing interpretation",
+          "fallback": "Manual decode: 3 spaces = word boundary, 1 space = letter boundary"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Steganography",
+      "tools": ["steghide", "stegsolve", "zsteg", "stegcracker"],
+      "techniques": ["steganography"],
+      "decisionPoints": [
+        {
+          "condition": "Steganography challenge with image",
+          "action": "steghide extract -sf <file> -p '' (try empty passphrase first — most common in CTF)",
+          "fallback": "stegcracker <file> /usr/share/wordlists/rockyou.txt for passphrase cracking"
+        },
+        {
+          "condition": "PNG file with LSB steganography",
+          "action": "zsteg -a <file> — checks for LSB, RGB channel, and other PNG-based hiding",
+          "fallback": "Stegsolve — check all color plane and filter combinations visually"
+        },
+        {
+          "condition": "Need to find hidden data in image",
+          "action": "Stegsolve — step through Red/Green/Blue planes, Alpha, and filters",
+          "fallback": "Check PNG chunks: pngcheck -v <file> — look for tEXt, zTXt, or unusual chunks"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Cryptography",
+      "tools": ["cyberchef", "hash-identifier", "john", "hashcat"],
+      "techniques": ["crypto-analysis"],
+      "decisionPoints": [
+        {
+          "condition": "Hash-like string found (fixed length hex)",
+          "action": "hash-identifier <hash> — identify hash type, then crack with hashcat -m <mode> -a 0",
+          "fallback": "Try online databases: crackstation.net, hashtoolkit.com"
+        },
+        {
+          "condition": "RSA challenge with known factors n, e, c",
+          "action": "If p, q known: compute phi, d = modinv(e, phi), then m = pow(c, d, n)",
+          "fallback": "If n is factored on factordb.com, use the factors to decrypt"
+        },
+        {
+          "condition": "XOR'd data suspected",
+          "action": "Single-byte XOR: python3 -c 'for i in range(256): print(bytes([b^i for b in data]))'",
+          "fallback": "Multi-byte XOR: try common keys or use cyberchef Xor Brute Force"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Forensics",
+      "tools": ["volatility", "binwalk", "foremost", "scalpel"],
+      "techniques": ["steganography"],
+      "decisionPoints": [
+        {
+          "condition": "Memory dump or disk image received",
+          "action": "volatility -f <image> imageinfo — identify OS profile, then run pslist, netscan, filescan",
+          "fallback": "Check for embedded files with binwalk or foremost"
+        },
+        {
+          "condition": "Deleted file recovery needed",
+          "action": "foremost -i <image> -o <output> — or scalpel with custom config",
+          "fallback": "volatility — filescan, then dumpfiles for specific file recovery"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Web CTF Exploitation",
+      "tools": ["ffuf", "burpsuite", "sqlmap", "dalfox"],
+      "techniques": ["sqli-auth-bypass", "xss-reflected"],
+      "decisionPoints": [
+        {
+          "condition": "Login form on web challenge",
+          "action": "Test SQLi auth bypass: admin' OR '1'='1' -- or admin' UNION SELECT 1,'admin','x' --",
+          "fallback": "Try NoSQL injection: {'$ne': null} if NoSQL backend"
+        },
+        {
+          "condition": "XSS parameter found",
+          "action": "Test <script>alert(1)</script> — if filtered, try <img src=x onerror=alert(1)>",
+          "fallback": "Use dalfox or XSStrike for automated payload generation"
+        },
+        {
+          "condition": "Command injection suspected",
+          "action": "Test ;id, |id, $(id), or ${IFS} — URL-encode the payload",
+          "fallback": "Use commix --url=... --batch for automated detection"
+        }
+      ]
+    }
+  ]
+}

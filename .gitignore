@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Python cache
+__pycache__/
+
+# Build output
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# State reports (regenerated)
+CURRENT_DATA_STATUS_REPORT.md
+CURRENT_STATE_REPORT.md
+PROJECT_STATE_REPORT.md

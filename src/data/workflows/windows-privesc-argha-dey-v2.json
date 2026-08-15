@@ -1,0 +1,130 @@
+{
+  "id": "windows-privesc-argha-dey-v2-methodology",
+  "zone": "privilege-escalation",
+  "name": "Argha Dey Windows Privilege Escalation Deep Dive",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Enhanced Windows privilege escalation methodology from the Windows Privilege Escalation notes, focusing on the decision flow for the exam environment. Covers PowerUp, UAC bypass, and exploit catalog lookup.",
+  "examHabits": [
+    "Run systeminfo > systeminfo.txt and check for missing patches first",
+    "Whoami /priv — always check for SeImpersonatePrivilege, SeBackupPrivilege, SeDebugPrivilege",
+    "Check if PowerShell execution is locked down — try v2, v4, or IEX from memory",
+    "winPEAS.exe output is huge — pipe to findstr to filter: winPEAS.exe quiet",
+    "Token manipulation: check who is in the local Administrators group"
+  ],
+  "quickRef": "systeminfo | findstr /i 'OS.Name OS.Version Hotfix'; whoami /priv; net user; net localgroup administrators",
+  "steps": [
+    {
+      "phase": "Phase 0 - Baseline Enumeration",
+      "tools": ["whoami", "systeminfo", "winpeas", "seatbelt"],
+      "techniques": ["win-pe-confirm"],
+      "decisionPoints": [
+        {
+          "condition": "Check current privileges",
+          "action": "whoami /priv — look for SeImpersonatePrivilege (JuicyPotato), SeBackupPrivilege, SeDebugPrivilege",
+          "fallback": "If limited, focus on file permission exploits and AlwaysInstallElevated"
+        },
+        {
+          "condition": "Check OS version and patches",
+          "action": "systeminfo | findstr /i 'OS.Name OS.Version Hotfix'",
+          "fallback": "wmic qfe list — look for missing KB patches for known exploits"
+        },
+        {
+          "condition": "Need automated enumeration",
+          "action": "winPEAS.exe quiet — review output for unquoted paths, weak perms, AlwaysInstallElevated",
+          "fallback": "Seatbelt.exe — quieter, targeted checks"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 1 - AlwaysInstallElevated",
+      "tools": ["whoami", "icacls"],
+      "techniques": ["alwaysinstall"],
+      "decisionPoints": [
+        {
+          "condition": "User has SeDebugPrivilege or local admin",
+          "action": "reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated",
+          "fallback": "Check both HKLM and HKCU — if both are 1, compile a .msi to .exe payload"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Unquoted Service Paths",
+      "tools": ["powerup", "winpeas"],
+      "techniques": ["unquoted-service"],
+      "decisionPoints": [
+        {
+          "condition": "winPEAS flags 'Unquoted Service Path'",
+          "action": "PowerUp.ps1: Write-ServiceBinary — or place exe in the unquoted path directory",
+          "fallback": "Search manually: sc query | findstr SERVICE, then check sc qc <service> for unquoted paths"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - DLL Hijacking",
+      "tools": ["powerup", "procmon", "winpeas"],
+      "techniques": ["dll-hijack"],
+      "decisionPoints": [
+        {
+          "condition": "Service runs as SYSTEM with unquoted binary path",
+          "action": "PowerUp: Invoke-ServiceChange -Name '<service>' — point binary to attacker-controlled DLL",
+          "fallback": "Use procmon to find which DLLs load from non-existent or hijacked paths"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Token Impersonation (Potato Family)",
+      "tools": ["juicypotato", "printspoofer", "roguepotato"],
+      "techniques": ["token-impersonation"],
+      "decisionPoints": [
+        {
+          "condition": "SeImpersonatePrivilege present",
+          "action": "JuicyPotato -m 10 -l 1337 -f -- -z (try multiple CLSIDs)",
+          "fallback": "PrintSpoofer: Spoolsample + wait — SYSTEM privilege via printer bug"
+        },
+        {
+          "condition": "Windows 10/11 with Spoolsanity",
+          "action": "PrintSpoofer.exe or Spoolsample via RPC",
+          "fallback": "Check if Spools service is running: sc query spooler"
+        },
+        {
+          "condition": "Can't get local admin",
+          "action": "Check for WebDav Mini-Redirector ( WebClient service ), WebDAV exploit",
+          "fallback": "Try NT API handle duplication or named pipe impersonation"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Weak Service / File Permissions",
+      "tools": ["powerup", "winpeas"],
+      "decisionPoints": [
+        {
+          "condition": "Service binary is writable by current user",
+          "action": "Replace service executable with reverse shell payload — restart service",
+          "fallback": "Use PowerUp: Set-ServiceBinary — or compile custom service"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Kernel Exploits (CVE Catalogue)",
+      "tools": ["windows-exploit-suggester", "searchsploit", "metasploit"],
+      "decisionPoints": [
+        {
+          "condition": "Specific OS version with known CVEs",
+          "action": "windows-exploit-suggester --database 2019-01-01.xlsx --systeminfo systeminfo.txt",
+          "fallback": "Searchsploit or exploit-db for the kernel version"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - Quick Decision Flow for the Exam",
+      "tools": [],
+      "decisionPoints": [
+        {
+          "condition": "Exam decision tree — follow this order",
+          "action": "1) AlwaysInstallElevated → 2) Unquoted Service Path → 3) DLL Hijacking → 4) SeImpersonate (JuicyPotato) → 5) Weak File/Svc Perm → 6) Kernel CVE",
+          "fallback": "If all fail, check for 777 scripts in scheduled tasks or writable directories in PATH"
+        }
+      ]
+    }
+  ]
+}

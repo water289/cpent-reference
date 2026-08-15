@@ -1,0 +1,210 @@
+[
+  {
+    "id": "recon",
+    "name": "Reconnaissance",
+    "color": "#6B7280",
+    "icon": "Radar",
+    "weight": 10,
+    "description": "Information gathering and footprinting techniques used to profile targets before active exploitation.",
+    "tips": "Always start with passive recon. Document everything. Use multiple sources to cross-reference findings.",
+    "workflows": [
+      "recon-workflow",
+      "recon-argha-dey-methodology"
+    ],
+    "examWeight": 5,
+    "examHabits": "Screenshot every discovery. amass enum --passive saves JSON; import into Burp. Check crt.sh for alternate domains."
+  },
+  {
+    "id": "network-enum",
+    "name": "Network Enumeration",
+    "color": "#6366F1",
+    "icon": "Network",
+    "weight": 10,
+    "description": "Host discovery, port scanning, and service enumeration across segmented networks. Layer 2/3 discovery, SNMP, NetBIOS, and SMB enumeration.",
+    "tips": "ICMP is often filtered. Use TCP SYN ping, ARP ping, and masscan. Segment awareness is critical — missing an IP = missing a zone.",
+    "workflows": [
+      "network-enum-workflow"
+    ],
+    "examWeight": 4,
+    "examHabits": ""
+  },
+  {
+    "id": "active-directory",
+    "name": "Active Directory",
+    "color": "#E8A020",
+    "icon": "Network",
+    "weight": 25,
+    "description": "Windows Active Directory enumeration, exploitation, and post-exploitation techniques for enterprise environments.",
+    "tips": "Enumerate first, exploit later. BloodHound is your best friend. Check for constrained/unconstrained delegation.",
+    "workflows": [
+      "ad-workflow",
+      "ad-argha-dey-methodology"
+    ],
+    "examWeight": 5,
+    "examHabits": "Always enumerate SRV records first (nslookup _ldap._tcp.domain). Try null session before credential attacks. BloodHound is your map — study the shortest path."
+  },
+  {
+    "id": "web",
+    "name": "Web Applications",
+    "color": "#3B82F6",
+    "icon": "Globe",
+    "weight": 20,
+    "description": "Web application penetration testing including OWASP Top 10, API security, and modern web frameworks.",
+    "tips": "Check every input field. Burp Suite is essential. Don't forget business logic flaws.",
+    "workflows": [
+      "web-workflow",
+      "web-argha-dey-methodology",
+      "web-app-recon-argha-dey-methodology"
+    ],
+    "examWeight": 5,
+    "examHabits": "Use Burp Proxy constantly. ffuf with SecLists. Try SQLi before XSS — SQLi gives broader access. Check /robots.txt and /sitemap.xml."
+  },
+  {
+    "id": "binary-exploitation",
+    "name": "Binary Exploitation",
+    "color": "#EF4444",
+    "icon": "Cpu",
+    "weight": 20,
+    "description": "Buffer overflows, format strings, heap exploitation, and shellcode development for Linux and Windows binaries.",
+    "tips": "Always check protections first (canary, NX, PIE, RELRO). GDB with pwndbg is essential. Ghidra for reverse engineering.",
+    "workflows": [
+      "binary-workflow",
+      "binary-argha-dey-methodology"
+    ],
+    "examWeight": 4,
+    "examHabits": "Run checksec + file first. Use ROPgadget for gadgets, one_gadget for quick wins. libc-database: search by puts/fgets GOT address."
+  },
+  {
+    "id": "iot-firmware",
+    "name": "IoT / Firmware",
+    "color": "#10B981",
+    "icon": "Server",
+    "weight": 15,
+    "description": "IoT device firmware analysis, embedded systems exploitation, hardware debugging, and radio communications.",
+    "tips": "Extract firmware first. Look for hardcoded credentials. Check UART/JTAG interfaces. Bus pirate is your friend.",
+    "workflows": [
+      "iot-workflow",
+      "iot-argha-dey-methodology"
+    ],
+    "examWeight": 4,
+    "examHabits": "binwalk -e firmware first. Check for default creds in /etc/passwd, web configs. UART is the most reliable hardware path — try 115200 baud."
+  },
+  {
+    "id": "privilege-escalation",
+    "name": "Privilege Escalation",
+    "color": "#F97316",
+    "icon": "Shield",
+    "weight": 10,
+    "description": "Techniques for escalating privileges from low-level shells to root or SYSTEM on Linux and Windows systems.",
+    "tips": "Run linpeas/winpeas first. Check SUID binaries, sudo misconfigs, cron jobs, and kernel exploits. Document every step.",
+    "workflows": [
+      "privesc-workflow",
+      "linux-privesc-argha-dey-methodology",
+      "windows-privesc-argha-dey-methodology",
+      "windows-privesc-argha-dey-v2-methodology"
+    ],
+    "examWeight": 5,
+    "examHabits": "Linux: sudo -l, find SUID, writable dirs. Windows: whoami /priv, check service perms, AlwaysInstallElevated. Google Cloud Shell for offline hash cracking."
+  },
+  {
+    "id": "lateral-movement",
+    "name": "Lateral Movement",
+    "color": "#8B5CF6",
+    "icon": "ArrowRight",
+    "weight": 10,
+    "description": "Moving between compromised hosts across network segments using pivoting, SSH tunnels, pass-the-hash, and relay techniques.",
+    "tips": "Chisel and ligolo-ng are essential for pivoting. Know when to use each. SOCKS proxy with proxychains for TCP tools.",
+    "workflows": [
+      "lateral-movement-workflow",
+      "pivoting-argha-dey-methodology"
+    ],
+    "examWeight": 5,
+    "examHabits": "Document every pivot. SSHuttle > proxychains. Check port 445, 135, 139, 445 open first. Use ligolo for clean tunneling."
+  },
+  {
+    "id": "password-attacks",
+    "name": "Password Attacks",
+    "color": "#EC4899",
+    "icon": "Key",
+    "weight": 10,
+    "description": "Hash cracking, online brute forcing, password spraying, and credential reuse strategies using hashcat, John, and Hydra.",
+    "tips": "Identify hash type first. Try dictionary + rules before brute force. Reuse every credential found immediately across all hosts.",
+    "workflows": [
+      "password-attacks-workflow"
+    ],
+    "examWeight": 4,
+    "examHabits": "Use rockyou.txt first. Hashcat rule: best64.rule. For Kerberoasting, crack offline. For AS-REP, online. Always check for NULL bind."
+  },
+  {
+    "id": "post-exploitation",
+    "name": "Post Exploitation",
+    "color": "#14B8A6",
+    "icon": "Activity",
+    "weight": 10,
+    "description": "Post-exploitation activities including credential dumping, persistence, C2 communication, and data exfiltration.",
+    "tips": "Harvest credentials early. Establish C2 before moving laterally. Clean up artifacts before the exam window closes.",
+    "workflows": [
+      "post-exploitation-workflow",
+      "post-exploitation-argha-dey-methodology"
+    ],
+    "examWeight": 5,
+    "examHabits": "Screenshot flags immediately. Dump hashes with lsadump::lsa /patching. Use Mimikatz in memory. Beacon stays alive for 6+ hours — don't kill it."
+  },
+  {
+    "id": "exploitation-frameworks",
+    "name": "Exploitation Frameworks",
+    "color": "#DC2626",
+    "icon": "Zap",
+    "weight": 5,
+    "description": "Automated exploitation using Metasploit, Searchsploit, and specialized frameworks for IoT and router exploitation.",
+    "tips": "Searchsploit first for quick wins. Metasploit for reliable, repeatable exploits. Routersploit for IoT-specific targets.",
+    "workflows": [
+      "exploitation-workflow",
+      "reverse-shells-argha-dey-methodology"
+    ],
+    "examWeight": 3,
+    "examHabits": "MSF: db_nmap, use exploit/multi/handler. Searchsploit for CVE modules. Load .rc files for repeatable workflows."
+  },
+  {
+    "id": "reporting",
+    "name": "Reporting",
+    "color": "#64748B",
+    "icon": "FileText",
+    "weight": 5,
+    "description": "Note-taking, evidence collection, screenshot documentation, and final report generation for penetration test deliverables.",
+    "tips": "Document as you go, not at the end. Use tmux for organized sessions. Screenshot everything with flameshot.",
+    "workflows": [
+      "reporting-workflow"
+    ],
+    "examWeight": 2,
+    "examHabits": "Flag format is usually CPENT{...}. Screenshot each flag. Use OBS or flameshot. Name files clearly."
+  },
+  {
+    "id": "ctf",
+    "name": "CTF Challenges",
+    "color": "#A855F7",
+    "icon": "Flag",
+    "weight": 10,
+    "description": "Capture the Flag methodologies covering cryptography, steganography, forensics, and miscellaneous challenges.",
+    "tips": "Read the challenge carefully. Check file headers with binwalk. Stegsolve for image steganography. CyberChef for encoding.",
+    "workflows": [
+      "ctf-argha-dey-methodology"
+    ],
+    "examWeight": 3,
+    "examHabits": "steghide steghide steghide. Check metadata with exiftool. Try CyberChef for decodes. XOR with common keys."
+  },
+  {
+    "id": "defense-evasion",
+    "name": "Defense Evasion",
+    "color": "#DC2626",
+    "icon": "ShieldOff",
+    "weight": 10,
+    "description": "Techniques for evading antivirus, EDR, firewalls, and other security controls during penetration testing.",
+    "tips": "Obfuscate payloads, use living-off-the-land binaries, and understand how AV/EDR products detect malicious activity.",
+    "workflows": [
+      "defense-evasion-argha-dey-methodology"
+    ],
+    "examWeight": 3,
+    "examHabits": ""
+  }
+]

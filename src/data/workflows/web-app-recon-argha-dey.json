@@ -1,0 +1,165 @@
+{
+  "id": "web-app-recon-argha-dey-methodology",
+  "zone": "web",
+  "name": "Argha Dey Web Application Recon Checklist",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Phase-by-phase web application reconnaissance derived from the Recon & Enumeration notes. Emphasizes the Nmap -> Fingerprint -> Fuzz -> Leak -> Foothold chain used in 90% of CPENT web challenges.",
+  "examHabits": [
+    "nmap's http-generator script output often reveals the exact CMS/version before running specialized scanners",
+    "Check ftp-anon in every scan — an FTP open with anonymous allows often contains backup files with creds",
+    "Always check /robots.txt, /.git/, /backup/, and /server-status/",
+    "If the site returns the Apache default page, the real app is under a different vhost or path — fuzz for it",
+    "Use feroxbuster first (faster than gobuster/ffuf) then refine with extension-aware fuzzing"
+  ],
+  "quickRef": "nmap -sC -sV -T4 -Pn -A <ip> | feroxbuster -u http://<ip>/ -k -w common.txt | whatweb http://<ip>/ | wpscan --url http://<ip>/ -e vp,u,vt,cb,m --api-token <token>",
+  "steps": [
+    {
+      "phase": "Phase 1 - Network & Service Recon",
+      "tools": ["nmap", "nc", "curl", "whatweb"],
+      "decisionPoints": [
+        {
+          "condition": "Standard engagement",
+          "action": "nmap -sC -sV -T4 -Pn -A -oN <ip>.txt <ip>",
+          "fallback": "nmap -p- -T4 --min-rate 5000 -oG allports.txt <ip> then re-scan discovered ports with -sV"
+        },
+        {
+          "condition": "Open web ports found (80,443,8080,8000,8443)",
+          "action": "Note exact port and banner. Look for http-title, http-server-header, http-generator",
+          "fallback": "Jenkins/Tomcat often on 8080/8081 — check for /script/text, /manager/html"
+        },
+        {
+          "condition": "Anonymous FTP allowed (code 230)",
+          "action": "ftp <ip> — login anonymous:anonymous — browse for backups, creds, configs",
+          "fallback": "Check for shared directories with write access (upload webshell)"
+        },
+        {
+          "condition": "OS/kernel version detected in scan",
+          "action": "Note for later CVE-based privilege escalation hunting",
+          "fallback": "If no version, guess from Apache/Nginx version and search for known exploits"
+        },
+        {
+          "condition": "Port 22/21/23 open alongside web",
+          "action": "Try default credentials — admin:admin, root:toor, cisco:cisco",
+          "fallback": "Banner grab with nc -nv <ip> <port>"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Web Technology Fingerprinting",
+      "tools": ["whatweb", "curl", "nmap", "wpscan", "nuclei"],
+      "decisionPoints": [
+        {
+          "condition": "Default 'Apache2 Ubuntu Default Page' seen",
+          "action": "App may not be on / — fuzz for vhosts and alternative paths",
+          "fallback": "Check Host: header fuzzing with ffuf -H 'Host: FUZZ.<ip>'"
+        },
+        {
+          "condition": "http-generator: WordPress x.x.x detected",
+          "action": "Run wpscan --url http://<ip>/ -e vp,u,vt,cb,m -v --api-token <token>",
+          "fallback": "Manual version check via /readme.html or /wp-includes/version.php"
+        },
+        {
+          "condition": "Login page branding shows product name (OTRS, Jenkins, etc.)",
+          "action": "Search 'default creds <product>' + CVE for that version",
+          "fallback": "Check view-source for commented-out links or file paths"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Directory, File & Vhost Fuzzing",
+      "tools": ["feroxbuster", "ffuf", "dirb", "gobuster"],
+      "decisionPoints": [
+        {
+          "condition": "First pass",
+          "action": "feroxbuster -u http://<ip>/ -k -w /usr/share/seclists/Discovery/Web-Content/common.txt",
+          "fallback": "dirb http://<ip>/ /usr/share/seclists/Discovery/Web-Content/common.txt"
+        },
+        {
+          "condition": "Need deeper directory bust",
+          "action": "ffuf -u http://<ip>/FUZ2Z -w /usr/share/seclists/Discovery/Web-Content/big.txt -e .php,.html,.txt",
+          "fallback": "dirb with multiple extensions enabled"
+        },
+        {
+          "condition": "Vhost suspected (same IP, multiple sites)",
+          "action": "ffuf -u http://<ip>/ -H 'Host: FUZZ' -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt",
+          "fallback": "Check Host header injection: Host: FUZZ -> if page changes, vhost exists"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Hidden File & Leak Hunting",
+      "tools": ["curl", "ffuf", "git-dumper", "nuclei"],
+      "decisionPoints": [
+        {
+          "condition": "robots.txt or sitemap.xml found",
+          "action": "curl http://<ip>/robots.txt — look for Disallow entries revealing hidden paths",
+          "fallback": "Check sitemap.xml for URLs not found during fuzzing"
+        },
+        {
+          "condition": "/.git/ directory discovered",
+          "action": "git-dumper https://github.com/lianh/docem — extract git history; search for commits with secrets",
+          "fallback": "Manual: curl http://<ip>/.git/config — check remote URL for repo path"
+        },
+        {
+          "condition": "Backup files suspected",
+          "action": "ffuf -u http://<ip>/FUZZ -w wordlist with extensions: .bak,.save,.old,.zip,.tar.gz,.sql",
+          "fallback": "grep -R -i -E 'pass|secret|key|token' extracted_dir/"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Anonymous Service Access",
+      "tools": ["nmap", "curl", "nc", "smbmap", "enum4linux"],
+      "decisionPoints": [
+        {
+          "condition": "SMB open (port 445)",
+          "action": "nmap -p445 --script smb-enum-shares,smb-enum-users,smb-vuln-ms17-010 <ip>",
+          "fallback": "smbmap -H <ip> — check for null-session shares"
+        },
+        {
+          "condition": "SMTP open (port 25)",
+          "action": "smtp-user-enum -U /usr/share/wordlists/usernames.txt -t <ip>",
+          "fallback": "Verify user existence via VRFY/EXPN or just proceed with user enumeration"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - CMS / Application-Specific Enumeration",
+      "tools": ["wpscan", "joomscan", "nuclei", "cmsmap"],
+      "decisionPoints": [
+        {
+          "condition": "WordPress confirmed",
+          "action": "wpscan --url http://<ip>/ -e vp,u,vt,cb,dbe,m -v --random-user-agent --api-token <token>",
+          "fallback": "Manual: curl /wp-json/wp/v2/users | jq for user enumeration"
+        },
+        {
+          "condition": "Other CMS detected (Joomla, Drupal, etc.)",
+          "action": "CMSmap -u http://<ip> — or nuclei -u http://<ip> -tags <cms>",
+          "fallback": "Searchsploit for the specific CMS version CVEs"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - Intercepting Proxy Workflow",
+      "tools": ["burpsuite", "zap"],
+      "decisionPoints": [
+        {
+          "condition": "Web app with user interaction",
+          "action": "Set browser proxy to Burp. Enable intercept. Test every parameter with single quote, <script>, ${IFS}, |id",
+          "fallback": "Use Burp Intruder for quick fuzzing of interesting parameters"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 8 - Master Recon Checklist (mental, every new Web Range IP)",
+      "tools": [],
+      "decisionPoints": [
+        {
+          "condition": "Always check these 5 things for every new web target",
+          "action": "1) /robots.txt 2) /server-status 3) /.git/config 4) /backup or /.bak 5) ftp-anon",
+          "fallback": "N/A — this is the checklist itself"
+        }
+      ]
+    }
+  ]
+}

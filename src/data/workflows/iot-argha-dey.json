@@ -1,0 +1,219 @@
+{
+  "id": "iot-argha-dey-methodology",
+  "zone": "iot-firmware",
+  "name": "Argha Dey IoT Firmware Analysis Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "4-stage IoT methodology: Recon/Enumeration \u2192 Firmware Acquisition \u2192 Firmware Static Analysis \u2192 Binary/Runtime Exploitation. Includes exam-day tips, firmware header cheat-sheet, question-pattern mapping, and full tool reference.",
+  "examHabits": [
+    "Always run binwalk before anything else on any .bin file - it answers 60-70% of firmware questions in one shot",
+    "Check target locale/date format (date command) before answering date-formatted questions - labs use YYYY-DD-MM traps",
+    "If binwalk shows nothing \u2192 suspect encryption; confirm with -E (entropy) flag - high flat entropy + no signatures = encrypted",
+    "Don't install tools on the target box - pivot file via Python HTTP server + wget (faster, no root/apt needed)",
+    "Recursive/forced extraction (eM --dd='.*') is fallback when default binwalk doesn't reveal FS name - walk nested folders manually",
+    "Distinguish standard vs custom directories - questions want non-standard folders (pwnable dir), not /etc, /bin, /usr",
+    "For device-identification questions: browser page title + quick Google search is fastest (e.g. 'dsp-w215' \u2192 HNAP \u2192 SOAP family)",
+    "Always start binary exploitation with file (arch + stripped) \u2192 readelf -h/-l \u2192 gdb-peda \u2192 qemu-<arch>-static if non-native"
+  ],
+  "quickRef": "binwalk FileOne.bin; binwalk -eM --dd='.*' FileOne.bin; file <extracted>; strings | grep -i busybox|gcc|linux version; sqlite3 config.sqlite .dump | grep -i <device>",
+  "steps": [
+    {
+      "phase": "Stage 1 - Recon/Enumeration",
+      "techniques": [
+        "passive-recon",
+        "firmware-extraction"
+      ],
+      "tools": [
+        "nmap",
+        "ssh",
+        "wget",
+        "python3"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "IoT host discovered on network",
+          "action": "nmap -sCV -p- <ip> \u2014 note SSH banner (OpenSSH tells base OS/Linux kernel), http admin panels, /cgi-bin/",
+          "fallback": "ssh <user>@<target-ip> with supplied creds or hydra brute force"
+        },
+        {
+          "condition": "Firmware file located on target",
+          "action": "Method A: python3 -m http.server 8080 (on target); wget http://<target-ip>:8080/<file>.bin (on attacker). Method B: scp user@<target>:/path/to/file.bin . (Method C: cat/base64 exfil over HTTP if shell only)",
+          "fallback": "If binwalk not on target: pivot the file rather than installing tools on target"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 2 - Firmware Acquisition",
+      "techniques": [
+        "firmware-extraction"
+      ],
+      "tools": [
+        "scp",
+        "wget",
+        "binwalk",
+        "file"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Firmware file on attacker box",
+          "action": "file FileOne.bin \u2014 if 'data', it's a generic firmware blob, not recognizable filetype",
+          "fallback": "binwalk FileOne.bin \u2014 scan for embedded signatures"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 3 - Firmware Static Analysis",
+      "techniques": [
+        "firmware-extraction"
+      ],
+      "tools": [
+        "binwalk",
+        "file",
+        "strings",
+        "readelf",
+        "grep",
+        "sqlite3"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Firmware binary acquired",
+          "action": "binwalk -eM FileOne.bin (recursive extraction + Matryoshka); if no signatures, try binwalk -eM --dd='.*' FileOne.bin",
+          "fallback": "binwalk -E FileOne.bin for entropy analysis (detect encryption)"
+        },
+        {
+          "condition": "Entropy high + no recognizable headers",
+          "action": "Treat as encrypted \u2014 no further unpacking possible",
+          "fallback": "If entropy high but gzip/LZMA signatures present: it's compressed, not encrypted"
+        },
+        {
+          "condition": "Filesystem extracted (Squashfs/JFFS2)",
+          "action": "cd squashfs-root; ls; look for non-standard dirs (pwnable/, custom services); grep -Rin 'passwd=' .; grep -Rin 'root:' . | grep -v Binary; cat etc/passwd; cat etc/shadow",
+          "fallback": "find . -iname config*; sqlite3 config.sqlite .dump | grep -i <devicename>"
+        },
+        {
+          "condition": "Extracted artifacts found",
+          "action": "strings <binary> | grep -i 'busybox|gcc|linux version' for BusyBox/GCC/kernel version banners; find . -type f -regextype posix-extended -regex '.*/[a-z]{5}_[a-z]{6}' for flag-named files",
+          "fallback": "file <extracted_file> (hex filename = offset; cross-ref binwalk decimal/hex columns)"
+        },
+        {
+          "condition": "Web admin panel identified via page title",
+          "action": "Open Login.html in browser, note title (e.g. DSP-W215 \u2192 Google \u2192 HNAP/SOAP family protocol)",
+          "fallback": "grep -Rn 'DeviceID' . for device model"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 4 - Binary/Runtime Exploitation",
+      "techniques": [
+        "buffer-overflow",
+        "format-string",
+        "heap-use-after-free"
+      ],
+      "tools": [
+        "file",
+        "readelf",
+        "objdump",
+        "gdb-peda",
+        "gdb-multiarch",
+        "qemu-arm-static",
+        "qemu-mips-static"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "ARM/MIPS/Blackfin binary found in pwnable dir",
+          "action": "file <binary> (arch + stripped state); readelf -h (entry point, machine); readelf -l (segments, GNU_STACK for NX, GNU_RELRO); checksec --file=<binary>",
+          "fallback": "qemu-arm-static -g 1234 ./binary &; gdb-multiarch; set architecture arm; target remote localhost:1234"
+        },
+        {
+          "condition": "Non-stripped binary with known function",
+          "action": "gdb: break main; run; p system; find /bin/sh; p/x <addr1> - <addr2> for ret2libc offset; check protections for exploit strategy",
+          "fallback": "ROPgadget --binary ./binary --only 'pop|ret'; ropper --file ./binary --search 'pop rdi'"
+        },
+        {
+          "condition": "MIPS/ARM binary needs emulation",
+          "action": "qemu-mips-static ./binary OR qemu-arm-static ./binary; qemu-arm -g 1234 ./binary & + gdb-multiarch for debugging",
+          "fallback": "patchelf to set local libc/interpreter matching remote target"
+        }
+      ]
+    },
+    {
+      "phase": "Firmware Cheat-Sheet: Question-Pattern \u2192 Method Map",
+      "techniques": [
+        "firmware-extraction"
+      ],
+      "tools": [
+        "binwalk",
+        "file",
+        "strings",
+        "sqlite3",
+        "readelf"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Question: 'Block size of firmware'",
+          "action": "binwalk file.bin \u2192 'blocksize: NNNNN bytes'",
+          "fallback": "File: 'FileOne.bin: data'"
+        },
+        {
+          "condition": "Question: 'CPU architecture'",
+          "action": "binwalk file.bin \u2192 'CPU ARCH' in uImage header line OR file <extracted_binary>",
+          "fallback": "readelf -h <binary> | grep Machine"
+        },
+        {
+          "condition": "Question: 'Linux version compatible / kernel'",
+          "action": "strings <binary> | grep 'linux version'; binwalk \u2192 uImage 'Linux-XX.X.XX' string",
+          "fallback": "readelf -h for entry point + program headers"
+        },
+        {
+          "condition": "Question: 'File system type'",
+          "action": "binwalk description line: Squashfs / JFFS2 / CRAMFS",
+          "fallback": "readelf -l for program headers"
+        },
+        {
+          "condition": "Question: 'Offset of extracted file'",
+          "action": "Cross-ref binwalk decimal/hex column, or the file's own numeric name (hex offset)",
+          "fallback": "file _extracted/<hexname> to confirm type"
+        },
+        {
+          "condition": "Question: 'Device IP from config DB'",
+          "action": "sqlite3 config.sqlite .dump | grep -i <devicename>",
+          "fallback": "strings to find BusyBox/GCC version"
+        },
+        {
+          "condition": "Question: 'BusyBox / GCC version'",
+          "action": "strings busybox | grep -i busybox; strings <binary> | grep -i gcc",
+          "fallback": "readelf -p .comment <binary> for GCC version string"
+        },
+        {
+          "condition": "Question: 'File containing root password'",
+          "action": "find . -iname passwd; cat etc/passwd; cat etc/shadow; grep for root: inside extracted files",
+          "fallback": "hashcat -m <mode> hash.txt rockyou.txt to crack"
+        },
+        {
+          "condition": "Question: 'Firmware device name/model'",
+          "action": "grep webroot for DeviceID:/title tags; or config DB dump; or browser page title + Google",
+          "fallback": "strings <binary> | grep for model-specific strings"
+        }
+      ]
+    },
+    {
+      "phase": "Stage 5 - Squashfs-root Directory Hunting Cheatsheet",
+      "techniques": [
+        "firmware-extraction"
+      ],
+      "tools": [
+        "ls",
+        "find",
+        "strings",
+        "grep",
+        "sqlite3"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Inside squashfs-root/",
+          "action": "cd usr/local (third-party services like samba); cd pwnable (custom exploit-dev challenge dirs = attack surface); cd www/www-ro (web front-end, check .cgi/.asp/.html); cd etc (passwd/shadow, network configs); cd mnt (config.sqlite, persistent storage)",
+          "fallback": "grep -Rin 'passwd=' .; grep -Rin 'password' . --include=*.cgi; find . -iname '*.sqlite'"
+        }
+      ]
+    }
+  ]
+}

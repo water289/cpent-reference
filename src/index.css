@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #0B0F19;
+    --bg-secondary: #141927;
+    --bg-tertiary: #1C2333;
+    --bg-code: #0D1117;
+    --accent-primary: #E8A020;
+    --accent-web: #3B82F6;
+    --accent-binary: #EF4444;
+    --accent-iot: #10B981;
+    --accent-ctf: #A855F7;
+    --accent-recon: #6B7280;
+    --text-primary: #E8EAED;
+    --text-secondary: #9CA3AF;
+    --text-code: #79C0FF;
+    --border: #1F2D40;
+  }
+}
+
+@layer components {
+  .terminal-block {
+    @apply bg-bg-code border border-border-custom rounded-lg overflow-hidden;
+  }
+  
+  .terminal-header {
+    @apply bg-bg-tertiary px-4 py-2 border-b border-border-custom flex items-center gap-2;
+  }
+  
+  .terminal-dot {
+    @apply w-3 h-3 rounded-full;
+  }
+  
+  .command-text {
+    @apply font-code text-sm text-text-primary break-all;
+  }
+  
+  .zone-badge {
+    @apply px-2 py-1 rounded text-xs font-medium font-display;
+  }
+  
+  .tool-card {
+    @apply bg-bg-secondary border border-border-custom rounded-lg p-4 hover:border-accent-primary transition-colors cursor-pointer;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #1F2D40 #0B0F19;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #0B0F19;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #1F2D40;
+    border-radius: 3px;
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}

