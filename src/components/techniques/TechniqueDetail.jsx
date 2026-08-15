@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Terminal, BookmarkPlus, BookmarkMinus, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Terminal, BookmarkPlus, BookmarkMinus, AlertTriangle, FileText } from 'lucide-react'
 import Breadcrumb from '../ui/Breadcrumb'
 import Badge from '../ui/Badge'
 import { useBookmarks } from '../../hooks/useBookmarks'
