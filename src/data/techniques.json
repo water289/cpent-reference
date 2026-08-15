@@ -1580,6 +1580,11 @@
     "category": "iot-firmware",
     "zones": [
       "iot-firmware"
+    ],
+    "tools": [
+      "firmware-mod-kit",
+      "qemu",
+      "binwalk"
     ]
   },
   {
@@ -8834,7 +8839,14 @@
     "zones": [
       "web"
     ],
-    "description": "Bypass login forms using SQL injection in credentials"
+    "description": "Bypass login forms using SQL injection in credentials",
+    "tools": [
+      "gobuster",
+      "ffuf",
+      "burp-suite",
+      "nuclei",
+      "sqlmap"
+    ]
   },
   {
     "id": "tech:xss-reflected",
@@ -8885,7 +8897,14 @@
     "zones": [
       "web"
     ],
-    "description": "Inject malicious JS via URL parameters that execute in browser"
+    "description": "Inject malicious JS via URL parameters that execute in browser",
+    "tools": [
+      "gobuster",
+      "xsstrike",
+      "ffuf",
+      "burp-suite",
+      "nuclei"
+    ]
   },
   {
     "id": "tech:csrf",
@@ -8936,7 +8955,14 @@
     "zones": [
       "web"
     ],
-    "description": "Trick authenticated user into performing unwanted actions"
+    "description": "Trick authenticated user into performing unwanted actions",
+    "tools": [
+      "gobuster",
+      "ffuf",
+      "burp-suite",
+      "nuclei",
+      "sqlmap"
+    ]
   },
   {
     "id": "tech:ssrf",
@@ -8987,7 +9013,14 @@
     "zones": [
       "web"
     ],
-    "description": "Force server to make requests to internal or external systems"
+    "description": "Force server to make requests to internal or external systems",
+    "tools": [
+      "gobuster",
+      "ffuf",
+      "burp-suite",
+      "nuclei",
+      "sqlmap"
+    ]
   },
   {
     "id": "tech:idor",
@@ -9038,7 +9071,14 @@
     "zones": [
       "web"
     ],
-    "description": "Access unauthorized data by manipulating object references"
+    "description": "Access unauthorized data by manipulating object references",
+    "tools": [
+      "gobuster",
+      "ffuf",
+      "burp-suite",
+      "nuclei",
+      "sqlmap"
+    ]
   },
   {
     "id": "tech:broken-access-control",
@@ -9089,7 +9129,14 @@
     "zones": [
       "web"
     ],
-    "description": "Exploit improper restrictions on user actions"
+    "description": "Exploit improper restrictions on user actions",
+    "tools": [
+      "gobuster",
+      "ffuf",
+      "burp-suite",
+      "nuclei",
+      "sqlmap"
+    ]
   },
   {
     "id": "tech:password-spraying",
@@ -9140,7 +9187,14 @@
     "zones": [
       "auth"
     ],
-    "description": "Use common passwords against many accounts to avoid lockouts"
+    "description": "Use common passwords against many accounts to avoid lockouts",
+    "tools": [
+      "kerbrute",
+      "medusa",
+      "subfinder",
+      "amass",
+      "crackmapexec"
+    ]
   },
   {
     "id": "tech:kerberoasting",
@@ -9189,7 +9243,14 @@
     "zones": [
       "auth"
     ],
-    "description": "Extract service account hashes from Kerberos tickets"
+    "description": "Extract service account hashes from Kerberos tickets",
+    "tools": [
+      "john",
+      "subfinder",
+      "amass",
+      "naabu",
+      "nmap"
+    ]
   },
   {
     "id": "tech:ntlm-cracking",
@@ -9239,7 +9300,14 @@
     "zones": [
       "auth"
     ],
-    "description": "Crack captured NTLM hashes using dictionary or brute force"
+    "description": "Crack captured NTLM hashes using dictionary or brute force",
+    "tools": [
+      "john",
+      "subfinder",
+      "amass",
+      "naabu",
+      "nmap"
+    ]
   },
   {
     "id": "tech:llmnr-nbtspoofing",
@@ -9288,7 +9356,14 @@
     "zones": [
       "auth"
     ],
-    "description": "Poison LLMNR/NBT-NS name resolution to capture hashes"
+    "description": "Poison LLMNR/NBT-NS name resolution to capture hashes",
+    "tools": [
+      "subfinder",
+      "amass",
+      "nmap",
+      "naabu",
+      "httpx"
+    ]
   },
   {
     "id": "tech:ps-remoting",
@@ -9338,7 +9413,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Execute commands on remote Windows hosts via WinRM"
+    "description": "Execute commands on remote Windows hosts via WinRM",
+    "tools": [
+      "subfinder",
+      "amass",
+      "crackmapexec",
+      "naabu",
+      "nmap"
+    ]
   },
   {
     "id": "tech:ssh-lateral",
@@ -9388,7 +9470,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Use stolen SSH credentials or keys to move between hosts"
+    "description": "Use stolen SSH credentials or keys to move between hosts",
+    "tools": [
+      "subfinder",
+      "chisel",
+      "amass",
+      "naabu",
+      "nmap"
+    ]
   },
   {
     "id": "tech:pass-the-hash",
@@ -9438,7 +9527,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Authenticate using NTLM hash without knowing the password"
+    "description": "Authenticate using NTLM hash without knowing the password",
+    "tools": [
+      "subfinder",
+      "mimikatz",
+      "amass",
+      "crackmapexec",
+      "naabu"
+    ]
   },
   {
     "id": "tech:psexec",
@@ -9488,7 +9584,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Execute commands remotely via Windows SMB service"
+    "description": "Execute commands remotely via Windows SMB service",
+    "tools": [
+      "subfinder",
+      "amass",
+      "crackmapexec",
+      "naabu",
+      "nmap"
+    ]
   },
   {
     "id": "tech:wmi-lateral",
@@ -9537,7 +9640,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Use Windows Management Instrumentation for remote execution"
+    "description": "Use Windows Management Instrumentation for remote execution",
+    "tools": [
+      "subfinder",
+      "amass",
+      "crackmapexec",
+      "naabu",
+      "nmap"
+    ]
   },
   {
     "id": "tech:sudo-lpe",
@@ -9587,7 +9697,14 @@
     "zones": [
       "priv-esc"
     ],
-    "description": "Exploit misconfigured sudo rules or SUID binaries for root"
+    "description": "Exploit misconfigured sudo rules or SUID binaries for root",
+    "tools": [
+      "linpeas",
+      "powerup",
+      "winpeas",
+      "sudo",
+      "linenum"
+    ]
   },
   {
     "id": "tech:kernel-exploit",
@@ -9636,7 +9753,14 @@
     "zones": [
       "priv-esc"
     ],
-    "description": "Exploit kernel vulnerabilities to escalate privileges"
+    "description": "Exploit kernel vulnerabilities to escalate privileges",
+    "tools": [
+      "searchsploit",
+      "linux-exploit-suggester",
+      "gdb",
+      "linpeas",
+      "powerup"
+    ]
   },
   {
     "id": "tech:linux-docker-escape",
@@ -9685,7 +9809,14 @@
     "zones": [
       "priv-esc"
     ],
-    "description": "Escape Docker containers to gain host access"
+    "description": "Escape Docker containers to gain host access",
+    "tools": [
+      "searchsploit",
+      "docker",
+      "linpeas",
+      "powerup",
+      "winpeas"
+    ]
   },
   {
     "id": "tech:unquoted-service",
@@ -9734,7 +9865,14 @@
     "zones": [
       "priv-esc"
     ],
-    "description": "Exploit unquoted service paths with spaces for privilege escalation"
+    "description": "Exploit unquoted service paths with spaces for privilege escalation",
+    "tools": [
+      "linpeas",
+      "powerup",
+      "winpeas",
+      "sudo",
+      "linenum"
+    ]
   },
   {
     "id": "tech:jenkins-script",
@@ -9783,7 +9921,14 @@
     "zones": [
       "exploit"
     ],
-    "description": "Exploit Jenkins script console for RCE"
+    "description": "Exploit Jenkins script console for RCE",
+    "tools": [
+      "searchsploit",
+      "metasploit",
+      "curl",
+      "msfvenom",
+      "python3"
+    ]
   },
   {
     "id": "tech:mimikatz",
@@ -9832,7 +9977,14 @@
     "zones": [
       "priv-esc"
     ],
-    "description": "Extract plaintext passwords, hashes, and Kerberos tickets"
+    "description": "Extract plaintext passwords, hashes, and Kerberos tickets",
+    "tools": [
+      "mimikatz",
+      "linpeas",
+      "powerup",
+      "winpeas",
+      "sudo"
+    ]
   },
   {
     "id": "tech:powerview",
@@ -9881,7 +10033,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Enumerate Active Directory domain for attack paths"
+    "description": "Enumerate Active Directory domain for attack paths",
+    "tools": [
+      "subfinder",
+      "bloodhound",
+      "amass",
+      "powerview",
+      "naabu"
+    ]
   },
   {
     "id": "tech:lsass-dump",
@@ -9930,7 +10089,14 @@
     "zones": [
       "priv-esc"
     ],
-    "description": "Dump LSASS process memory to extract credentials"
+    "description": "Dump LSASS process memory to extract credentials",
+    "tools": [
+      "mimikatz",
+      "linpeas",
+      "powerup",
+      "winpeas",
+      "sudo"
+    ]
   },
   {
     "id": "tech:persistence-registry",
@@ -9979,7 +10145,14 @@
     "zones": [
       "exploit"
     ],
-    "description": "Create persistent backdoor via Windows registry autorun"
+    "description": "Create persistent backdoor via Windows registry autorun",
+    "tools": [
+      "searchsploit",
+      "metasploit",
+      "empire",
+      "reg",
+      "msfvenom"
+    ]
   },
   {
     "id": "tech:persistence-cron",
@@ -10028,7 +10201,13 @@
     "zones": [
       "exploit"
     ],
-    "description": "Use cron jobs as persistence mechanism on Linux systems"
+    "description": "Use cron jobs as persistence mechanism on Linux systems",
+    "tools": [
+      "searchsploit",
+      "metasploit",
+      "msfvenom",
+      "find"
+    ]
   },
   {
     "id": "tech:socks-proxy",
@@ -10078,7 +10257,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Set up SOCKS proxy through compromised host for internal browsing"
+    "description": "Set up SOCKS proxy through compromised host for internal browsing",
+    "tools": [
+      "subfinder",
+      "chisel",
+      "amass",
+      "naabu",
+      "nmap"
+    ]
   },
   {
     "id": "tech:port-forwarding",
@@ -10128,7 +10314,14 @@
     "zones": [
       "network"
     ],
-    "description": "Access internal services by forwarding ports through compromised hosts"
+    "description": "Access internal services by forwarding ports through compromised hosts",
+    "tools": [
+      "netdiscover",
+      "chisel",
+      "nmap",
+      "smbclient",
+      "proxychains4"
+    ]
   },
   {
     "id": "tech:sshuttle",
@@ -10178,7 +10371,14 @@
     "zones": [
       "lateral"
     ],
-    "description": "Transparent proxy/VPN over SSH for routing traffic through target networks"
+    "description": "Transparent proxy/VPN over SSH for routing traffic through target networks",
+    "tools": [
+      "subfinder",
+      "amass",
+      "sshuttle",
+      "nmap",
+      "naabu"
+    ]
   },
   {
     "id": "tech:cloud-metadata",
@@ -10228,6 +10428,13 @@
     "zones": [
       "exploit"
     ],
-    "description": "Exploit exposed cloud metadata endpoints for credential theft"
+    "description": "Exploit exposed cloud metadata endpoints for credential theft",
+    "tools": [
+      "searchsploit",
+      "metasploit",
+      "curl",
+      "msfvenom",
+      "python3"
+    ]
   }
 ]

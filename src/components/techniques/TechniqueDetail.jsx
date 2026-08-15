@@ -125,17 +125,36 @@ export default function TechniqueDetail() {
 
       {relatedTools.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold text-white mb-3">Tools Used</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <h2 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
+            <Terminal className="w-5 h-5 text-gray-400" />
+            Tools & Commands
+          </h2>
+          <div className="space-y-5">
             {relatedTools.map(tool => (
-              <Link
-                key={tool.id}
-                to={`/tools/${tool.id}`}
-                className="block glass-panel rounded-xl p-5 hover:border-white/[0.12] transition-all border border-white/[0.06]"
-              >
-                <h3 className="font-medium text-white hover:text-accent-gold transition-colors mb-1.5">{tool.name}</h3>
-                <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">{tool.purpose}</p>
-              </Link>
+              <div key={tool.id} className="glass-panel rounded-2xl border border-white/[0.06] overflow-hidden">
+                <Link
+                  to={`/tools/${tool.id}`}
+                  className="block px-5 py-3.5 bg-white/[0.02] border-b border-white/[0.06] hover:bg-white/[0.04] transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-white hover:text-accent-gold transition-colors">{tool.name}</h3>
+                    <span className="text-xs text-gray-500">{tool.commands?.length || 0} commands</span>
+                  </div>
+                  <p className="text-sm text-gray-400 mt-1 leading-relaxed">{tool.purpose}</p>
+                </Link>
+                {tool.commands?.length > 0 && (
+                  <div className="p-5 space-y-3">
+                    {tool.commands.slice(0, 5).map((cmd, idx) => (
+                      <CommandBlock
+                        key={idx}
+                        command={cmd}
+                        zone={technique.zone}
+                        zoneColor={zoneColor}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </section>
