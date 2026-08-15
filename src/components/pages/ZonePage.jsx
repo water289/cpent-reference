@@ -15,14 +15,17 @@ export default function ZonePage() {
     <div className="space-y-6">
       <Breadcrumb items={[{ path: null, label: 'Exam Zones' }]} />
       <div className="flex items-center gap-4">
-        <Link to="/" className="text-gray-500 hover:text-gray-300 transition-colors">
+        <Link
+          to="/"
+          className="p-2 glass-panel rounded-xl text-gray-400 hover:text-white hover:border-accent-gold/30 transition-all"
+        >
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-3xl font-bold text-white">Exam Zones</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Exam Zones</h1>
+          <p className="text-sm text-gray-400 mt-1">Select a zone to view detailed techniques, tools, and workflow guidance</p>
+        </div>
       </div>
-      <p className="text-gray-400">
-        Select a zone to view detailed techniques, tools, and workflow guidance for that exam area.
-      </p>
       <ZoneMap />
     </div>
   )

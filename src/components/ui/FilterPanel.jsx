@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { X, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import { getUniqueValues, getAllTags } from '../../utils/filters'
-import Badge from './Badge'
 
 export default function FilterPanel({ filters, onFilterChange, items, availableFilters = {} }) {
   const [sections, setSections] = useState({
@@ -37,10 +36,10 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
   }, 0)
 
   const FilterSection = ({ title, section, children }) => (
-    <div className="border-b border-gray-700 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0">
+    <div className="border-b border-white/[0.06] pb-4 mb-4 last:border-0 last:pb-0 last:mb-0">
       <button
         onClick={() => toggleSection(section)}
-        className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-300 hover:text-white transition-colors"
+        className="flex items-center justify-between w-full text-left text-sm font-semibold text-gray-300 hover:text-white transition-colors"
       >
         <span>{title}</span>
         {sections[section] ? (
@@ -49,18 +48,18 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
           <ChevronRight className="w-4 h-4 text-gray-500" />
         )}
       </button>
-      {sections[section] && <div className="mt-2 space-y-1.5">{children}</div>}
+      {sections[section] && <div className="mt-3 space-y-2">{children}</div>}
     </div>
   )
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Filters</h3>
+    <div className="glass-panel rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Filters</h3>
         {activeFilterCount > 0 && (
           <button
             onClick={clearAll}
-            className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-xs text-accent-gold hover:text-accent-gold/80 transition-colors"
           >
             <RotateCcw className="w-3 h-3" />
             Clear all ({activeFilterCount})
@@ -69,17 +68,17 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
       </div>
 
       {activeFilterCount > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
+        <div className="flex flex-wrap gap-1.5 mb-5">
           {Object.entries(filters).flatMap(([key, values]) =>
             (values || []).map(value => (
               <span
                 key={`${key}-${value}`}
-                className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent-primary/20 text-accent-primary rounded text-xs border border-accent-primary/30"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-accent-gold/10 text-accent-gold rounded-lg text-xs border border-accent-gold/20"
               >
                 {value}
                 <button
                   onClick={() => handleChange(key, value)}
-                  className="hover:text-white"
+                  className="hover:text-white transition-colors"
                   aria-label={`Remove ${value} filter`}
                 >
                   <X className="w-3 h-3" />
@@ -92,57 +91,57 @@ export default function FilterPanel({ filters, onFilterChange, items, availableF
 
       <FilterSection title="Zone" section="zone">
         {allZones.map(zone => (
-          <label key={zone} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white cursor-pointer">
+          <label key={zone} className="flex items-center gap-2.5 text-sm text-gray-300 hover:text-white cursor-pointer group">
             <input
               type="checkbox"
               checked={(filters.zones || []).includes(zone)}
               onChange={() => handleChange('zones', zone)}
-              className="rounded border-gray-600 bg-gray-700 text-accent-primary focus:ring-accent-primary focus:ring-offset-gray-800"
+              className="rounded-md border-gray-600 bg-surface-sunken text-accent-gold focus:ring-accent-gold focus:ring-offset-0"
             />
-            <span className="capitalize">{zone.replace(/-/g, ' ')}</span>
+            <span className="capitalize group-hover:translate-x-0.5 transition-transform">{zone.replace(/-/g, ' ')}</span>
           </label>
         ))}
       </FilterSection>
 
       <FilterSection title="OS" section="os">
         {allOS.map(os => (
-          <label key={os} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white cursor-pointer">
+          <label key={os} className="flex items-center gap-2.5 text-sm text-gray-300 hover:text-white cursor-pointer group">
             <input
               type="checkbox"
               checked={(filters.os || []).includes(os)}
               onChange={() => handleChange('os', os)}
-              className="rounded border-gray-600 bg-gray-700 text-accent-primary focus:ring-accent-primary focus:ring-offset-gray-800"
+              className="rounded-md border-gray-600 bg-surface-sunken text-accent-gold focus:ring-accent-gold focus:ring-offset-0"
             />
-            <span className="capitalize">{os}</span>
+            <span className="capitalize group-hover:translate-x-0.5 transition-transform">{os}</span>
           </label>
         ))}
       </FilterSection>
 
       <FilterSection title="Type" section="type">
         {allTypes.map(type => (
-          <label key={type} className="flex items-center gap-2 text-sm text-gray-300 hover:text-white cursor-pointer">
+          <label key={type} className="flex items-center gap-2.5 text-sm text-gray-300 hover:text-white cursor-pointer group">
             <input
               type="checkbox"
               checked={(filters.types || []).includes(type)}
               onChange={() => handleChange('types', type)}
-              className="rounded border-gray-600 bg-gray-700 text-accent-primary focus:ring-accent-primary focus:ring-offset-gray-800"
+              className="rounded-md border-gray-600 bg-surface-sunken text-accent-gold focus:ring-accent-gold focus:ring-offset-0"
             />
-            <span className="capitalize">{type}</span>
+            <span className="capitalize group-hover:translate-x-0.5 transition-transform">{type}</span>
           </label>
         ))}
       </FilterSection>
 
       <FilterSection title="Tags" section="tags">
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {allTags.slice(0, 15).map(tag => (
             <button
               key={tag.name}
               onClick={() => handleChange('tags', tag.name)}
               className={`
-                px-2 py-0.5 rounded text-xs border transition-colors
+                px-2.5 py-1 rounded-lg text-xs border transition-all
                 ${(filters.tags || []).includes(tag.name)
-                  ? 'bg-accent-primary/20 border-accent-primary text-accent-primary'
-                  : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-500'
+                  ? 'bg-accent-gold/10 border-accent-gold/30 text-accent-gold'
+                  : 'bg-white/[0.03] border-white/[0.06] text-gray-400 hover:border-white/[0.12] hover:text-gray-200'
                 }
               `}
             >

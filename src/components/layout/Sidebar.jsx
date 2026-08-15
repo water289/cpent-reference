@@ -15,7 +15,6 @@ import {
   Terminal,
   Settings,
   ChevronLeft,
-  ChevronRight,
   Radar,
   Lock,
   Unlock,
@@ -43,7 +42,7 @@ const ZONE_ICONS = {
   'defense-evasion': Shield,
 }
 
-export default function Sidebar({ className = '' }) {
+export default function Sidebar() {
   const { sidebarOpen, setSidebarOpen, examMode, toggleExamMode } = useApp()
   const location = useLocation()
 
@@ -51,47 +50,50 @@ export default function Sidebar({ className = '' }) {
     return (
       <button
         onClick={() => setSidebarOpen(true)}
-        className="absolute top-4 left-4 z-50 p-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-colors no-print"
+        className="fixed top-5 left-5 z-50 p-2.5 glass-panel rounded-xl text-gray-400 hover:text-white hover:border-accent-gold/30 transition-all no-print group"
         aria-label="Open sidebar"
       >
-        <Menu className="w-5 h-5" />
+        <Menu className="w-5 h-5 group-hover:scale-110 transition-transform" />
       </button>
     )
   }
 
   return (
-    <aside className={`
-      fixed top-0 left-0 z-40 h-screen bg-gray-900 border-r border-gray-800
+    <aside className="
+      fixed top-0 left-0 z-40 h-screen
+      glass-panel-elevated border-r border-white/[0.06]
       transition-all duration-300 ease-in-out
-      ${sidebarOpen ? 'w-64' : 'w-0 -translate-x-full'}
-      ${className}
-    `}>
+      w-64
+    ">
       <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <Link to="/" className="flex items-center gap-2 group">
-            <Shield className="w-6 h-6 text-accent-primary" />
-            <span className="text-lg font-bold text-white font-display group-hover:text-accent-primary transition-colors">
+        <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="relative">
+              <Shield className="w-7 h-7 text-accent-gold" />
+              <div className="absolute inset-0 blur-md bg-accent-gold/30 group-hover:bg-accent-gold/50 transition-all" />
+            </div>
+            <span className="text-lg font-bold text-white font-display tracking-tight group-hover:text-accent-gold transition-colors">
               CPENT
             </span>
           </Link>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="p-1.5 text-gray-500 hover:text-gray-300 hover:bg-gray-800 rounded transition-colors"
+            className="p-1.5 text-gray-500 hover:text-gray-300 hover:bg-white/[0.04] rounded-lg transition-all"
             aria-label="Collapse sidebar"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-3 px-2 scrollbar-thin" aria-label="Main navigation">
-          <ul className="space-y-0.5">
+        <nav className="flex-1 overflow-y-auto py-4 px-3 scrollbar-thin" aria-label="Main navigation">
+          <ul className="space-y-1">
             <li>
               <Link
                 to="/"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
@@ -101,10 +103,10 @@ export default function Sidebar({ className = '' }) {
             <li>
               <Link
                 to="/search"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/search'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <Search className="w-4 h-4" />
@@ -112,30 +114,31 @@ export default function Sidebar({ className = '' }) {
               </Link>
             </li>
 
-            <li className="pt-3 pb-1">
-              <span className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <li className="pt-4 pb-2">
+              <span className="px-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">
                 Exam Zones
               </span>
             </li>
             {Object.entries(ZONE_ICONS).map(([zoneId, Icon]) => {
               const isActive = location.pathname.includes(zoneId)
+              const zoneColor = getZoneColor(zoneId)
               return (
                 <li key={zoneId}>
                   <Link
                     to={`/zones/${zoneId}`}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-gray-800 text-white'
-                        : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                        ? 'bg-white/[0.04] text-white active'
+                        : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                     }`}
                     style={isActive ? {
-                      borderLeft: `3px solid ${getZoneColor(zoneId)}`,
-                      paddingLeft: '0.625rem',
+                      borderLeft: `3px solid ${zoneColor}`,
+                      paddingLeft: '0.75rem',
                     } : {}}
                   >
                     <Icon
                       className="w-4 h-4"
-                      style={{ color: isActive ? getZoneColor(zoneId) : '#9CA3AF' }}
+                      style={{ color: isActive ? zoneColor : '#6B7280' }}
                     />
                     {zoneId.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                   </Link>
@@ -143,18 +146,18 @@ export default function Sidebar({ className = '' }) {
               )
             })}
 
-            <li className="pt-3 pb-1">
-              <span className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <li className="pt-4 pb-2">
+              <span className="px-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">
                 Reference
               </span>
             </li>
             <li>
               <Link
                 to="/tools"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/tools'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <Terminal className="w-4 h-4" />
@@ -164,10 +167,10 @@ export default function Sidebar({ className = '' }) {
             <li>
               <Link
                 to="/techniques"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/techniques'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <BookOpen className="w-4 h-4" />
@@ -177,10 +180,10 @@ export default function Sidebar({ className = '' }) {
             <li>
               <Link
                 to="/workflows"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/workflows'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <GitBranch className="w-4 h-4" />
@@ -190,10 +193,10 @@ export default function Sidebar({ className = '' }) {
             <li>
               <Link
                 to="/argha-dey"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/argha-dey'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <FileText className="w-4 h-4 text-amber-400" />
@@ -203,10 +206,10 @@ export default function Sidebar({ className = '' }) {
             <li>
               <Link
                 to="/strategy"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/strategy'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <Target className="w-4 h-4 text-purple-400" />
@@ -216,10 +219,10 @@ export default function Sidebar({ className = '' }) {
             <li>
               <Link
                 to="/bookmarks"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/bookmarks'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <Bookmark className="w-4 h-4" />
@@ -227,18 +230,18 @@ export default function Sidebar({ className = '' }) {
               </Link>
             </li>
 
-            <li className="pt-3 pb-1">
-              <span className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <li className="pt-4 pb-2">
+              <span className="px-3 text-[11px] font-semibold text-gray-500 uppercase tracking-widest">
                 System
               </span>
             </li>
             <li>
               <Link
                 to="/exam"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/exam'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <Clock className="w-4 h-4" />
@@ -248,10 +251,10 @@ export default function Sidebar({ className = '' }) {
             <li>
               <Link
                 to="/settings"
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === '/settings'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'bg-accent-gold/[0.08] text-white active'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -261,14 +264,14 @@ export default function Sidebar({ className = '' }) {
           </ul>
         </nav>
 
-        <div className="p-3 border-t border-gray-800 no-print">
+        <div className="p-4 border-t border-white/[0.06] no-print">
           <button
             onClick={toggleExamMode}
             className={`
-              w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all
+              w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all
               ${examMode
-                ? 'bg-red-900/30 border border-red-700 text-red-400 hover:bg-red-900/50'
-                : 'bg-accent-primary/10 border border-accent-primary/30 text-accent-primary hover:bg-accent-primary/20'
+                ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
+                : 'bg-accent-gold/10 border border-accent-gold/20 text-accent-gold hover:bg-accent-gold/20'
               }
             `}
             aria-label={examMode ? 'Exit exam mode' : 'Enter exam mode'}

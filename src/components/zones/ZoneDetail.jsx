@@ -66,10 +66,10 @@ export default function ZoneDetail({ zoneId }) {
   const renderWorkflow = (wf) => {
     const expanded = expandedWorkflows[wf.id]
     return (
-      <div key={wf.id} className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+      <div key={wf.id} className="glass-panel rounded-xl overflow-hidden border border-white/[0.06]">
         <button
           onClick={() => toggleWorkflow(wf.id)}
-          className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-700/50 transition-colors"
+          className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-white/[0.02] transition-colors"
         >
           <FileText className="w-5 h-5 text-gray-400" />
           <div className="flex-1">
@@ -83,14 +83,14 @@ export default function ZoneDetail({ zoneId }) {
         </button>
 
         {expanded && (
-          <div className="px-4 pb-4 border-t border-gray-700 space-y-4">
+          <div className="px-5 pb-4 border-t border-white/[0.06] space-y-4">
             {wf.quickRef && (
               <div>
-                <h4 className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-2">
+                <h4 className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2 uppercase tracking-wider">
                   <Copy className="w-3 h-3" />
                   Quick Reference
                 </h4>
-                <pre className="text-xs text-green-400 bg-gray-900/50 border border-gray-700 rounded p-2 overflow-x-auto">
+                <pre className="text-xs text-accent-green bg-surface-sunken border border-white/[0.04] rounded-xl p-4 overflow-x-auto">
                   {wf.quickRef}
                 </pre>
               </div>
@@ -98,14 +98,14 @@ export default function ZoneDetail({ zoneId }) {
 
             {wf.examHabits && Array.isArray(wf.examHabits) && wf.examHabits.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-2">
+                <h4 className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2 uppercase tracking-wider">
                   <Clipboard className="w-3 h-3" />
                   Exam Habits
                 </h4>
-                <ul className="space-y-1">
+                <ul className="space-y-2">
                   {wf.examHabits.map((habit, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                      <CheckCircle2 className="w-3 h-3 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0" />
                       <span>{habit}</span>
                     </li>
                   ))}
@@ -117,19 +117,19 @@ export default function ZoneDetail({ zoneId }) {
               const stepKey = `${wf.id}-${sIdx}`
               const stepExpanded = expandedSteps[stepKey]
               return (
-                <div key={sIdx} className="border border-gray-700/50 rounded-lg bg-gray-900/30">
+                <div key={sIdx} className="border border-white/[0.06] rounded-xl bg-white/[0.01]">
                   <button
                     onClick={() => toggleStep(stepKey)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-left"
+                    className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-white/[0.02] transition-colors"
                   >
                     <span className="text-sm font-medium text-white">{step.phase || `Step ${sIdx + 1}`}</span>
                     <ChevronRight className={`w-3 h-3 text-gray-500 transition-transform ${stepExpanded ? 'rotate-90' : ''}`} />
                   </button>
 
                   {stepExpanded && (
-                    <div className="px-3 pb-3 space-y-3">
+                    <div className="px-4 pb-4 border-t border-white/[0.06] space-y-3">
                       {step.description && (
-                        <p className="text-sm text-gray-300">{step.description}</p>
+                        <p className="text-sm text-gray-300 leading-relaxed">{step.description}</p>
                       )}
 
                       {step.command && (
@@ -143,19 +143,19 @@ export default function ZoneDetail({ zoneId }) {
                       {step.techniques && step.techniques.length > 0 && (
                         <div>
                           <span className="text-xs text-gray-500">Techniques:</span>
-                          <div className="flex flex-wrap gap-1.5 mt-1">
+                          <div className="flex flex-wrap gap-2 mt-2">
                             {step.techniques.map(techId => {
                               const tech = getItemById(data.techniques, techId)
                               return tech ? (
                                 <Link
                                   key={techId}
                                   to={`/techniques/${tech.id}`}
-                                  className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600 rounded text-gray-300 hover:text-white hover:border-gray-500 transition-colors"
+                                  className="text-xs px-3 py-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-gray-300 hover:text-white hover:border-white/[0.16] transition-all"
                                 >
                                   {tech.name}
                                 </Link>
                               ) : (
-                                <span key={techId} className="text-xs px-2 py-0.5 bg-gray-700/30 rounded text-gray-500">
+                                <span key={techId} className="text-xs px-3 py-1.5 bg-white/[0.02] rounded-lg text-gray-500">
                                   {techId}
                                 </span>
                               )
@@ -167,19 +167,19 @@ export default function ZoneDetail({ zoneId }) {
                       {step.tools && step.tools.length > 0 && (
                         <div>
                           <span className="text-xs text-gray-500">Tools:</span>
-                          <div className="flex flex-wrap gap-1.5 mt-1">
+                          <div className="flex flex-wrap gap-2 mt-2">
                             {step.tools.map(toolId => {
                               const tool = getItemById(data.tools, toolId)
                               return tool ? (
                                 <Link
                                   key={toolId}
                                   to={`/tools/${tool.id}`}
-                                  className="text-xs px-2 py-0.5 bg-gray-700/50 border border-gray-600 rounded text-gray-300 hover:text-white hover:border-gray-500 transition-colors"
+                                  className="text-xs px-3 py-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-gray-300 hover:text-white hover:border-white/[0.16] transition-all"
                                 >
                                   {tool.name}
                                 </Link>
                               ) : (
-                                <span key={toolId} className="text-xs px-2 py-0.5 bg-gray-700/30 rounded text-gray-500">
+                                <span key={toolId} className="text-xs px-3 py-1.5 bg-white/[0.02] rounded-lg text-gray-500">
                                   {toolId}
                                 </span>
                               )
@@ -189,16 +189,16 @@ export default function ZoneDetail({ zoneId }) {
                       )}
 
                       {step.decisionPoints && step.decisionPoints.length > 0 && (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                           {step.decisionPoints.map((dp, dIdx) => (
-                            <div key={dIdx} className="text-xs text-gray-300">
-                              <span className="text-gray-400">Condition:</span> {dp.condition}
+                            <div key={dIdx} className="text-xs text-gray-300 bg-white/[0.02] rounded-xl p-4 border border-white/[0.06]">
+                              <span className="text-gray-500">Condition:</span> {dp.condition}
                               <br />
-                              <span className="text-green-400">Action:</span> {dp.action}
+                              <span className="text-accent-green">Action:</span> {dp.action}
                               {dp.fallback && (
                                 <>
                                   <br />
-                                  <span className="text-yellow-400">Fallback:</span> {dp.fallback}
+                                  <span className="text-amber-400">Fallback:</span> {dp.fallback}
                                 </>
                               )}
                             </div>
@@ -221,14 +221,14 @@ export default function ZoneDetail({ zoneId }) {
       <Breadcrumb items={breadcrumbItems} />
 
       <div
-        className="rounded-xl overflow-hidden border border-gray-700"
-        style={{ backgroundColor: `${zoneColor}15`, borderColor: `${zoneColor}40` }}
+        className="rounded-xl overflow-hidden border border-white/[0.08]"
+        style={{ backgroundColor: `${zoneColor}08`, borderColor: `${zoneColor}25` }}
       >
         <div className="p-6 md:p-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">{zone.name}</h1>
-              <p className="text-gray-300 max-w-2xl">{zone.description}</p>
+              <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">{zone.name}</h1>
+              <p className="text-gray-300 max-w-2xl leading-relaxed">{zone.description}</p>
               <div className="flex items-center gap-4 mt-3 text-sm text-gray-400">
                 <span className="flex items-center gap-1.5">
                   <Shield className="w-4 h-4" />
@@ -241,7 +241,7 @@ export default function ZoneDetail({ zoneId }) {
             <div className="flex items-center gap-4">
               <div className="relative w-20 h-20">
                 <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
-                  <circle cx="40" cy="40" r="35" stroke="#1F2937" strokeWidth="6" fill="none" />
+                  <circle cx="40" cy="40" r="35" stroke="rgba(255,255,255,0.05)" strokeWidth="6" fill="none" />
                   <circle
                     cx="40" cy="40" r="35"
                     stroke={zoneColor}
@@ -269,8 +269,8 @@ export default function ZoneDetail({ zoneId }) {
       {zone.tips && (
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">Zone Tips</h2>
-          <div className="bg-yellow-900/20 border border-yellow-800/50 rounded-lg p-4">
-            <p className="text-sm text-yellow-200">{zone.tips}</p>
+          <div className="glass-panel rounded-2xl p-5 border border-amber-500/10">
+            <p className="text-sm text-amber-200 leading-relaxed">{zone.tips}</p>
           </div>
         </section>
       )}
@@ -280,14 +280,14 @@ export default function ZoneDetail({ zoneId }) {
           <h2 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
             <Link
               to="/strategy"
-              className="text-purple-400 hover:text-purple-300"
+              className="text-accent-purple hover:text-accent-purple/80 transition-colors"
             >
               Zone Strategy Guide
             </Link>
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-400 leading-relaxed">
             Visit the{' '}
-            <Link to="/strategy" className="text-purple-400 hover:underline">
+            <Link to="/strategy" className="text-accent-purple hover:underline">
               full Strategy page
             </Link>{' '}
             for the complete zone-by-zone exam action plan, or use the decision panel on the right

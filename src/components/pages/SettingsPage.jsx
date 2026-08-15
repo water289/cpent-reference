@@ -84,18 +84,16 @@ export default function Settings() {
   return (
     <div className="space-y-6 max-w-3xl">
       <Breadcrumb items={[{ path: null, label: 'Settings' }]} />
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-white mt-1">Settings</h1>
-      </div>
+      <h1 className="text-3xl font-bold text-white tracking-tight mt-1">Settings</h1>
 
       {message && (
-        <div className="bg-green-900/20 border border-green-800 rounded-lg p-3 text-sm text-green-300">
+        <div className="glass-panel rounded-xl p-4 border border-accent-green/20 text-sm text-accent-green">
           {message}
         </div>
       )}
 
-      <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+      <section className="glass-panel rounded-2xl p-7 border border-white/[0.06]">
+        <h2 className="text-lg font-semibold text-white flex items-center gap-2.5 mb-5">
           <Moon className="w-5 h-5 text-gray-400" />
           Theme
         </h2>
@@ -108,11 +106,13 @@ export default function Settings() {
             <button
               key={value}
               onClick={() => applyTheme(value)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                theme === value
-                  ? 'border-accent-primary bg-accent-primary/10 text-accent-primary'
-                  : 'border-gray-700 text-gray-400 hover:text-gray-200'
-              }`}
+              className={`
+                flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all
+                ${theme === value
+                  ? 'border-accent-gold/30 bg-accent-gold/10 text-accent-gold'
+                  : 'border-white/[0.06] text-gray-400 hover:text-gray-200 hover:border-white/[0.12]'
+                }
+              `}
             >
               <Icon className="w-4 h-4" />
               {label}
@@ -121,20 +121,20 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+      <section className="glass-panel rounded-2xl p-7 border border-white/[0.06]">
+        <h2 className="text-lg font-semibold text-white flex items-center gap-2.5 mb-5">
           <Download className="w-5 h-5 text-gray-400" />
           Backup & Restore
         </h2>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.03] border border-white/[0.08] text-gray-200 rounded-xl hover:bg-white/[0.06] transition-all"
           >
             <Download className="w-4 h-4" />
             Export All Data
           </button>
-          <label className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-gray-200 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer">
+          <label className="flex items-center gap-2 px-5 py-2.5 bg-white/[0.03] border border-white/[0.08] text-gray-200 rounded-xl hover:bg-white/[0.06] transition-all cursor-pointer">
             <Upload className="w-4 h-4" />
             Import Backup
             <input type="file" accept=".json" onChange={handleImport} className="hidden" />
@@ -142,8 +142,8 @@ export default function Settings() {
         </div>
       </section>
 
-      <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+      <section className="glass-panel rounded-2xl p-7 border border-white/[0.06]">
+        <h2 className="text-lg font-semibold text-white flex items-center gap-2.5 mb-5">
           <RotateCcw className="w-5 h-5 text-gray-400" />
           Reset Data
         </h2>
@@ -152,7 +152,7 @@ export default function Settings() {
             <button
               key={key}
               onClick={() => handleReset(key)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-900/20 border border-red-800 text-red-400 rounded-lg hover:bg-red-900/40 transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-accent-red/10 border border-accent-red/20 text-accent-red rounded-xl hover:bg-accent-red/20 transition-all"
             >
               <Trash2 className="w-4 h-4" />
               Clear {key.charAt(0).toUpperCase() + key.slice(1)}
@@ -161,16 +161,16 @@ export default function Settings() {
         </div>
         <button
           onClick={handleResetAll}
-          className="flex items-center gap-2 px-4 py-2 bg-red-900/30 border border-red-700 text-red-400 rounded-lg hover:bg-red-900/50 transition-colors"
+          className="mt-4 flex items-center gap-2 px-5 py-2.5 bg-accent-red/10 border border-accent-red/20 text-accent-red rounded-xl hover:bg-accent-red/20 transition-all"
         >
           <Trash2 className="w-4 h-4" />
           Reset All Data
         </button>
       </section>
 
-      <section className="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-white">About</h2>
-        <div className="text-sm text-gray-400 space-y-1">
+      <section className="glass-panel rounded-2xl p-7 border border-white/[0.06]">
+        <h2 className="text-lg font-semibold text-white mb-4">About</h2>
+        <div className="text-sm text-gray-400 space-y-2 leading-relaxed">
           <p>CPENT Reference — Interactive Cheat Sheet</p>
           <p>Built for the EC-Council CPENT exam preparation.</p>
           <p>All data is stored locally. No server required.</p>

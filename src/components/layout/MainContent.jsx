@@ -2,10 +2,10 @@ export default function MainContent({ children, className = '' }) {
   return (
     <main className={`
       flex-1 min-w-0 overflow-y-auto scrollbar-thin
-      px-4 py-6 md:px-6 lg:px-8
+      px-6 py-8 md:px-8 lg:px-10
       ${className}
-    `}>
-      <div className="mx-auto max-w-7xl w-full">
+    `} style={{ background: 'var(--surface-base)' }}>
+      <div className="mx-auto max-w-7xl w-full animate-fade-in">
         {children}
       </div>
     </main>

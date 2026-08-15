@@ -60,14 +60,12 @@ export default function SearchPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Breadcrumb items={[{ path: null, label: 'Search' }]} />
-      </div>
-      <h1 className="text-3xl font-bold text-white">Search</h1>
+      <Breadcrumb items={[{ path: null, label: 'Search' }]} />
+      <h1 className="text-3xl font-bold text-white tracking-tight">Search</h1>
 
       <div className="max-w-2xl">
         <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
           <input
             type="text"
             value={localQuery}
@@ -78,13 +76,13 @@ export default function SearchPage() {
               }
             }}
             placeholder="Search tools, techniques, commands, tags..."
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-10 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/30"
+            className="w-full glass-panel rounded-xl pl-11 pr-11 py-3.5 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-accent-gold/50 focus:ring-1 focus:ring-accent-gold/20"
             aria-label="Search"
           />
           {localQuery && (
             <button
               onClick={clearQuery}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" />
@@ -94,16 +92,16 @@ export default function SearchPage() {
       </div>
 
       {!hasResults && !localQuery && (
-        <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-6 text-center">
-          <SearchIcon className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+        <div className="glass-panel rounded-2xl p-10 text-center">
+          <SearchIcon className="w-14 h-14 text-gray-600 mx-auto mb-4" />
           <p className="text-gray-400">Start typing to search tools, techniques, and commands...</p>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
-          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">Popular Tags</h3>
+          <div className="glass-panel rounded-2xl p-5">
+            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Popular Tags</h3>
             <TagCloud tags={tags.slice(0, 20)} onTagClick={handleTagClick} />
           </div>
         </div>
@@ -111,15 +109,15 @@ export default function SearchPage() {
         <div className="lg:col-span-3">
           {hasResults ? (
             <>
-              <div className="flex items-center gap-1 bg-gray-800 border border-gray-700 rounded-lg p-1 mb-4">
+              <div className="flex items-center gap-1 glass-panel rounded-xl p-1 mb-5">
                 {tabs.map(tab => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      flex-1 px-3 py-1.5 rounded text-sm font-medium transition-colors
+                      flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition-all
                       ${activeTab === tab.id
-                        ? 'bg-gray-700 text-white'
+                        ? 'bg-accent-gold/10 text-accent-gold'
                         : 'text-gray-400 hover:text-gray-200'
                       }
                     `}
@@ -132,7 +130,7 @@ export default function SearchPage() {
               {(activeTab === 'all' || activeTab === 'tools') && filteredTools.length > 0 && (
                 <div className={activeTab === 'all' ? 'mb-6' : ''}>
                   {activeTab === 'all' && (
-                    <h2 className="text-lg font-semibold text-white mb-3">Tools</h2>
+                    <h2 className="text-lg font-semibold text-white mb-4">Tools</h2>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(activeTab === 'all' ? filteredTools.slice(0, 6) : filteredTools).map(tool => (
@@ -142,7 +140,7 @@ export default function SearchPage() {
                   {activeTab === 'all' && filteredTools.length > 6 && (
                     <button
                       onClick={() => setActiveTab('tools')}
-                      className="mt-4 text-sm text-accent-primary hover:text-accent-primary/80"
+                      className="mt-5 text-sm text-accent-gold hover:text-accent-gold/80"
                     >
                       View all {filteredTools.length} tools
                     </button>
@@ -153,7 +151,7 @@ export default function SearchPage() {
               {(activeTab === 'all' || activeTab === 'techniques') && filteredTechniques.length > 0 && (
                 <div>
                   {activeTab === 'all' && (
-                    <h2 className="text-lg font-semibold text-white mb-3">Techniques</h2>
+                    <h2 className="text-lg font-semibold text-white mb-4">Techniques</h2>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {(activeTab === 'all' ? filteredTechniques.slice(0, 6) : filteredTechniques).map(tech => (
@@ -163,7 +161,7 @@ export default function SearchPage() {
                   {activeTab === 'all' && filteredTechniques.length > 6 && (
                     <button
                       onClick={() => setActiveTab('techniques')}
-                      className="mt-4 text-sm text-accent-primary hover:text-accent-primary/80"
+                      className="mt-5 text-sm text-accent-gold hover:text-accent-gold/80"
                     >
                       View all {filteredTechniques.length} techniques
                     </button>
@@ -172,8 +170,9 @@ export default function SearchPage() {
               )}
             </>
           ) : (
-            <div className="text-center py-12 text-gray-500">
-              No results found for "{localQuery}"
+            <div className="glass-panel rounded-2xl p-10 text-center">
+              <SearchIcon className="w-14 h-14 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">No results found for &quot;{localQuery}&quot;</p>
             </div>
           )}
         </div>

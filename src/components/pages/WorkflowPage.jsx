@@ -33,31 +33,32 @@ export default function WorkflowPage() {
   const renderWorkflowCard = (wf) => {
     const zoneColor = getZoneColor(wf.zone)
     const isSelected = selectedWorkflow?.id === wf.id
-    const isArgha = wf.source?.includes('Argha Dey')
 
     return (
       <button
         key={wf.id}
         onClick={() => { setSelectedWorkflow(wf); setExpandedSteps({}) }}
-        className={`p-4 bg-gray-800 border rounded-lg text-left transition-all ${
-          isSelected
-            ? 'border-amber-500 bg-amber-900/20'
-            : 'border-gray-700 hover:border-gray-600 hover:bg-gray-700/30'
-        }`}
+        className={`
+          w-full p-4 rounded-xl text-left transition-all border
+          ${isSelected
+            ? 'border-accent-gold/30 bg-accent-gold/[0.06]'
+            : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'
+          }
+        `}
       >
-        <div className="flex items-center gap-2 mb-1">
-          <span
-            className="w-2 h-2 rounded-full flex-shrink-0"
-            style={{ backgroundColor: zoneColor }}
-          />
-          <span className="text-xs text-gray-500">{wf.zone}</span>
-          <SourceBadge source={wf.source} size="xs" />
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-2 h-2 rounded-full flex-shrink-0"
+              style={{ backgroundColor: zoneColor }}
+            />
+            <span className="text-xs text-gray-500 uppercase tracking-wider">{wf.zone}</span>
+            <SourceBadge source={wf.source} size="xs" />
+          </div>
+          <span className="text-xs text-gray-500">{wf.steps?.length || 0} steps</span>
         </div>
-        <h3 className="font-medium text-white">{wf.name}</h3>
-        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{wf.description}</p>
-        <span className="text-xs text-gray-400 mt-2 block">
-          {wf.steps?.length || 0} steps
-        </span>
+        <h3 className="font-medium text-white mb-1 group-hover:text-accent-gold transition-colors">{wf.name}</h3>
+        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{wf.description}</p>
       </button>
     )
   }
@@ -67,16 +68,16 @@ export default function WorkflowPage() {
     const isArgha = wf.source?.includes('Argha Dey')
 
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-700">
-          <div className="flex items-center gap-2 mb-2">
+      <div className="glass-panel-elevated rounded-2xl overflow-hidden border border-white/[0.08] animate-slide-in">
+        <div className="px-7 py-5 border-b border-white/[0.06]" style={{ background: `linear-gradient(180deg, ${zoneColor}10 0%, transparent 100%)` }}>
+          <div className="flex items-center gap-3 mb-2">
             <FileText className={`w-5 h-5 ${isArgha ? 'text-amber-400' : 'text-gray-400'}`} />
             <h2 className="text-xl font-bold text-white">{wf.name}</h2>
             <SourceBadge source={wf.source} size="xs" />
           </div>
-          <p className="text-sm text-gray-400">{wf.description}</p>
-          <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
+          <p className="text-sm text-gray-400 leading-relaxed">{wf.description}</p>
+          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: zoneColor }} />
               Zone: {wf.zone}
             </span>
@@ -85,14 +86,14 @@ export default function WorkflowPage() {
           </div>
         </div>
 
-        <div className="px-4 pb-4 space-y-4">
+        <div className="px-7 py-5 space-y-5">
           {wf.quickRef && (
             <div>
-              <h4 className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-2">
+              <h4 className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2 uppercase tracking-wider">
                 <Copy className="w-3 h-3" />
                 Quick Reference
               </h4>
-              <pre className="text-xs text-green-400 bg-gray-900/50 border border-gray-700 rounded p-2 overflow-x-auto">
+              <pre className="text-xs text-accent-green bg-surface-sunken border border-white/[0.04] rounded-xl p-4 overflow-x-auto">
                 {wf.quickRef}
               </pre>
             </div>
@@ -100,14 +101,14 @@ export default function WorkflowPage() {
 
           {wf.examHabits && Array.isArray(wf.examHabits) && wf.examHabits.length > 0 && (
             <div>
-              <h4 className="text-xs font-medium text-gray-400 mb-1.5 flex items-center gap-2">
+              <h4 className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-2 uppercase tracking-wider">
                 <Clipboard className="w-3 h-3" />
                 Exam Habits
               </h4>
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {wf.examHabits.map((habit, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                    <CheckCircle2 className="w-3 h-3 text-gray-500 mt-0.5 flex-shrink-0" />
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                    <CheckCircle2 className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                     <span>{habit}</span>
                   </li>
                 ))}
@@ -117,31 +118,31 @@ export default function WorkflowPage() {
 
           {wf.steps && (
             <div>
-              <h4 className="text-xs font-medium text-gray-400 mb-2">Methodology Steps</h4>
+              <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">Methodology Steps</h4>
               <div className="space-y-3">
                 {wf.steps.map((step, sIdx) => {
                   const stepKey = `${wf.id}-${sIdx}`
                   const stepExpanded = expandedSteps[stepKey]
                   return (
-                    <div key={sIdx} className="border border-gray-700/50 rounded-lg bg-gray-900/30">
+                    <div key={sIdx} className="border border-white/[0.06] rounded-xl bg-white/[0.01] overflow-hidden">
                       <button
                         onClick={() => toggleStep(stepKey)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                        className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-white/[0.02] transition-colors"
                       >
                         <span
-                          className="flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-                          style={{ backgroundColor: `${zoneColor}30`, color: zoneColor }}
+                          className="flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold"
+                          style={{ backgroundColor: `${zoneColor}20`, color: zoneColor }}
                         >
                           {sIdx + 1}
                         </span>
-                        <span className="text-sm font-medium text-white">{step.phase}</span>
-                        <ChevronRight className={`w-4 h-4 text-gray-500 ml-auto transition-transform ${stepExpanded ? 'rotate-90' : ''}`} />
+                        <span className="text-sm font-medium text-white flex-1">{step.phase}</span>
+                        <ChevronRight className={`w-4 h-4 text-gray-500 transition-transform ${stepExpanded ? 'rotate-90' : ''}`} />
                       </button>
 
                       {stepExpanded && (
-                        <div className="px-4 pb-3 border-t border-gray-700 space-y-3">
+                        <div className="px-5 pb-4 border-t border-white/[0.06] space-y-4">
                           {step.description && (
-                            <p className="text-sm text-gray-300">{step.description}</p>
+                            <p className="text-sm text-gray-300 leading-relaxed">{step.description}</p>
                           )}
 
                           {step.command && (
@@ -155,19 +156,19 @@ export default function WorkflowPage() {
                           {step.techniques && step.techniques.length > 0 && (
                             <div>
                               <span className="text-xs text-gray-500">Techniques:</span>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
+                              <div className="flex flex-wrap gap-2 mt-2">
                                 {step.techniques.map(techId => {
                                   const tech = getItemById(data.techniques, techId)
                                   return tech ? (
                                     <Link
                                       key={techId}
                                       to={`/techniques/${tech.id}`}
-                                      className="text-xs px-2 py-1 bg-gray-700/50 border border-gray-600 rounded text-gray-300 hover:text-white hover:border-gray-500 transition-colors"
+                                      className="text-xs px-3 py-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-gray-300 hover:text-white hover:border-white/[0.16] transition-all"
                                     >
                                       {tech.name}
                                     </Link>
                                   ) : (
-                                    <span key={techId} className="text-xs px-2 py-1 bg-gray-700/30 rounded text-gray-500">
+                                    <span key={techId} className="text-xs px-3 py-1.5 bg-white/[0.02] rounded-lg text-gray-500">
                                       {techId}
                                     </span>
                                   )
@@ -179,19 +180,19 @@ export default function WorkflowPage() {
                           {step.tools && step.tools.length > 0 && (
                             <div>
                               <span className="text-xs text-gray-500">Tools:</span>
-                              <div className="flex flex-wrap gap-1.5 mt-1">
+                              <div className="flex flex-wrap gap-2 mt-2">
                                 {step.tools.map(toolId => {
                                   const tool = getItemById(data.tools, toolId)
                                   return tool ? (
                                     <Link
                                       key={toolId}
                                       to={`/tools/${tool.id}`}
-                                      className="text-xs px-2 py-1 bg-gray-700/50 border border-gray-600 rounded text-gray-300 hover:text-white hover:border-gray-500 transition-colors"
+                                      className="text-xs px-3 py-1.5 bg-white/[0.03] border border-white/[0.08] rounded-lg text-gray-300 hover:text-white hover:border-white/[0.16] transition-all"
                                     >
                                       {tool.name}
                                     </Link>
                                   ) : (
-                                    <span key={toolId} className="text-xs px-2 py-1 bg-gray-700/30 rounded text-gray-500">
+                                    <span key={toolId} className="text-xs px-3 py-1.5 bg-white/[0.02] rounded-lg text-gray-500">
                                       {toolId}
                                     </span>
                                   )
@@ -201,16 +202,16 @@ export default function WorkflowPage() {
                           )}
 
                           {step.decisionPoints && step.decisionPoints.length > 0 && (
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                               {step.decisionPoints.map((dp, dIdx) => (
-                                <div key={dIdx} className="text-xs text-gray-300">
-                                  <span className="text-gray-400">Condition:</span> {dp.condition}
+                                <div key={dIdx} className="text-sm text-gray-300 bg-white/[0.02] rounded-xl p-4 border border-white/[0.06]">
+                                  <span className="text-gray-500">Condition:</span> {dp.condition}
                                   <br />
-                                  <span className="text-green-400">Action:</span> {dp.action}
+                                  <span className="text-accent-green">Action:</span> {dp.action}
                                   {dp.fallback && (
                                     <>
                                       <br />
-                                      <span className="text-yellow-400">Fallback:</span> {dp.fallback}
+                                      <span className="text-amber-400">Fallback:</span> {dp.fallback}
                                     </>
                                   )}
                                 </div>
@@ -235,11 +236,11 @@ export default function WorkflowPage() {
       <div className="flex items-center justify-between">
         <div>
           <Breadcrumb items={[{ path: null, label: 'Workflows' }]} />
-          <h1 className="text-3xl font-bold text-white mt-1">Workflows</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight mt-1">Workflows</h1>
         </div>
         <button
           onClick={handlePrint}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white hover:border-gray-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 glass-panel rounded-xl text-sm text-gray-300 hover:text-white hover:border-white/[0.16] transition-all"
         >
           <Printer className="w-4 h-4" />
           Print
@@ -247,9 +248,9 @@ export default function WorkflowPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-5">
           <section>
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
               Argha Dey Methodologies ({arghaWorkflows.length})
             </h2>
             <div className="space-y-2">
@@ -258,7 +259,7 @@ export default function WorkflowPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
               Standard Workflows ({standardWorkflows.length})
             </h2>
             <div className="space-y-2">
@@ -271,10 +272,10 @@ export default function WorkflowPage() {
           {selectedWorkflow ? (
             renderWorkflowDetail(selectedWorkflow)
           ) : (
-            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
-              <FileText className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-gray-300 mb-2">Select a workflow</h3>
-              <p className="text-sm text-gray-500">
+            <div className="glass-panel rounded-2xl p-12 text-center border border-white/[0.06]">
+              <FileText className="w-14 h-14 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-300 mb-2">Select a workflow</h3>
+              <p className="text-sm text-gray-500 max-w-md mx-auto">
                 Choose a workflow from the sidebar to view its detailed step-by-step methodology.
               </p>
             </div>

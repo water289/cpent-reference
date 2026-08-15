@@ -5,7 +5,6 @@ import { useDatabase } from '../../context/AppContext'
 import ToolCard from '../tools/ToolCard'
 import TechniqueCard from '../techniques/TechniqueCard'
 import Breadcrumb from '../ui/Breadcrumb'
-import { groupByZone } from '../../utils/dataHelpers'
 import { getZoneColor } from '../../utils/filters'
 
 export default function BookmarksPage() {
@@ -44,13 +43,19 @@ export default function BookmarksPage() {
 
   if (bookmarks.length === 0) {
     return (
-      <div className="text-center py-16">
-        <BookmarkX className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-white mb-2">No Bookmarks Yet</h2>
-        <p className="text-gray-400 max-w-md mx-auto">
-          Start bookmarking tools and techniques to see them here.
-          Use the bookmark button on any tool or technique page to save it for later.
-        </p>
+      <div className="space-y-6">
+        <Breadcrumb items={[{ path: null, label: 'Bookmarks' }]} />
+        <div className="text-center py-20">
+          <div className="relative inline-block mb-5">
+            <BookmarkX className="w-16 h-16 text-gray-600 mx-auto" />
+            <div className="absolute inset-0 blur-2xl bg-gray-600/20" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">No Bookmarks Yet</h2>
+          <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
+            Start bookmarking tools and techniques to see them here.
+            Use the bookmark button on any tool or technique page to save it for later.
+          </p>
+        </div>
       </div>
     )
   }
@@ -60,20 +65,20 @@ export default function BookmarksPage() {
       <Breadcrumb items={[{ path: null, label: 'Bookmarks' }]} />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white mt-1">Bookmarks</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight mt-1">Bookmarks</h1>
           <p className="text-gray-400 mt-1">{bookmarks.length} bookmarked item{bookmarks.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white hover:border-gray-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 glass-panel rounded-xl text-sm text-gray-300 hover:text-white hover:border-white/[0.16] transition-all"
           >
             <Download className="w-4 h-4" />
             Export
           </button>
           <button
             onClick={clearBookmarks}
-            className="flex items-center gap-2 px-4 py-2 bg-red-900/20 border border-red-800 rounded-lg text-sm text-red-400 hover:bg-red-900/40 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-accent-red/10 border border-accent-red/20 text-accent-red rounded-xl text-sm font-semibold hover:bg-accent-red/20 transition-all"
           >
             <Trash2 className="w-4 h-4" />
             Clear All
@@ -86,7 +91,7 @@ export default function BookmarksPage() {
           <section key={zone.id}>
             <div className="flex items-center gap-3 mb-4">
               <div
-                className="w-1 h-6 rounded-full"
+                className="w-1.5 h-7 rounded-full"
                 style={{ backgroundColor: getZoneColor(zone.id) }}
               />
               <h2 className="text-xl font-semibold text-white">{zone.name}</h2>

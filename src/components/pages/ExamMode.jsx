@@ -105,7 +105,7 @@ export default function ExamMode() {
           <select
             value={selectedZone}
             onChange={(e) => setSelectedZone(e.target.value)}
-            className="bg-gray-100 border border-gray-300 rounded-lg px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-accent-primary"
+            className="bg-gray-100 border border-gray-300 rounded-xl px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:border-accent-gold cursor-pointer"
           >
             <option value="all">All Zones</option>
             {data?.zones?.map(zone => (
@@ -120,7 +120,7 @@ export default function ExamMode() {
           </div>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
+            className="px-4 py-1.5 bg-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-300 transition-colors"
           >
             Exit Exam Mode
           </button>
@@ -129,9 +129,9 @@ export default function ExamMode() {
 
       <div className="flex-1 flex overflow-hidden">
         <div className="w-80 border-r border-gray-200 overflow-y-auto bg-gray-50 p-4 flex-shrink-0 no-print">
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">
                 Tools ({filteredTools.length})
               </h2>
               <div className="space-y-1">
@@ -143,7 +143,7 @@ export default function ExamMode() {
                     <div key={tool.id}>
                       <button
                         onClick={() => toggleExpand(tool.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors text-left"
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-200 transition-colors text-left"
                         style={{ borderLeft: `3px solid ${color}` }}
                       >
                         <span className="text-xs text-gray-500 w-5">{idx + 1}</span>
@@ -154,15 +154,15 @@ export default function ExamMode() {
                         <div className="px-8 py-2 space-y-1">
                           {tool.commands?.map((cmd, cIdx) => (
                             <div key={cIdx} className="flex items-center gap-2">
-                               <code className="text-xs text-gray-700 font-mono bg-gray-200 rounded px-2 py-1 break-all max-w-full">
-                                 {cmd.command}
-                               </code>
-                               <button
-                                 onClick={() => handleCopy(cmd.command, `${tool.id}-${cIdx}`)}
-                                 className="p-1 text-gray-500 hover:text-gray-700 flex-shrink-0"
-                               >
-                                {copiedCmd === `${tool.id}-${cIdx}` ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                              </button>
+                               <code className="text-xs text-gray-700 font-mono bg-gray-200 rounded-lg px-2 py-1 break-all max-w-full">
+                                {cmd.command}
+                              </code>
+                              <button
+                                onClick={() => handleCopy(cmd.command, `${tool.id}-${cIdx}`)}
+                                className="p-1 text-gray-500 hover:text-gray-700 flex-shrink-0"
+                              >
+                               {copiedCmd === `${tool.id}-${cIdx}` ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                             </button>
                             </div>
                           ))}
                         </div>
@@ -174,7 +174,7 @@ export default function ExamMode() {
             </div>
 
             <div>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5">
                 Techniques ({filteredTechniques.length})
               </h2>
               <div className="space-y-1">
@@ -186,7 +186,7 @@ export default function ExamMode() {
                     <div key={tech.id}>
                       <button
                         onClick={() => toggleExpand(tech.id)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 transition-colors text-left"
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-gray-200 transition-colors text-left"
                         style={{ borderLeft: `3px solid ${color}` }}
                       >
                         <span className="text-xs text-gray-500 w-5">{idx + 1}</span>
@@ -195,7 +195,7 @@ export default function ExamMode() {
                       </button>
                       {isExpanded && primaryCmd && (
                         <div className="px-8 py-2">
-                          <code className="text-xs text-gray-700 font-mono bg-gray-200 rounded px-2 py-1 block break-all">
+                          <code className="text-xs text-gray-700 font-mono bg-gray-200 rounded-lg px-2 py-1 block break-all">
                             {primaryCmd}
                           </code>
                         </div>
@@ -208,13 +208,13 @@ export default function ExamMode() {
 
             {bookmarks.length > 0 && (
               <div>
-                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1">
                   <Bookmark className="w-3 h-3" />
                   Bookmarks ({bookmarks.length})
                 </h2>
                 <div className="space-y-1">
                   {bookmarks.slice(0, 10).map((bm) => (
-                    <div key={bm.id} className="text-xs text-gray-600 px-3 py-1">
+                    <div key={bm.id} className="text-xs text-gray-600 px-3 py-1.5">
                       {bm.name}
                     </div>
                   ))}
@@ -234,12 +234,12 @@ export default function ExamMode() {
               return (
                 <div
                   key={item.id}
-                  className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm"
+                  className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
                   style={{ borderTop: `3px solid ${color}` }}
                 >
                   <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="flex items-center justify-center w-6 h-6 bg-gray-200 text-gray-700 rounded-full text-xs font-bold">
+                      <span className="flex items-center justify-center w-6 h-6 bg-gray-200 text-gray-700 rounded-lg text-xs font-bold">
                         {idx + 1}
                       </span>
                       <div>
@@ -251,7 +251,7 @@ export default function ExamMode() {
                       {cmd && (
                         <button
                           onClick={() => handleCopy(cmd, item.id)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-gray-200 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-300 transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 border border-gray-300 rounded-xl text-sm text-gray-700 hover:bg-gray-300 transition-colors"
                         >
                           {copiedCmd === item.id ? (
                             <>
@@ -279,7 +279,7 @@ export default function ExamMode() {
                     <div className="p-4 space-y-3">
                       <p className="text-sm text-gray-600">{item.purpose || item.description}</p>
                       {item.commands?.slice(0, 3).map((cmd, cIdx) => (
-                        <div key={cIdx} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 overflow-x-auto">
+                        <div key={cIdx} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 overflow-x-auto">
                           <code className="text-sm text-gray-700 font-mono break-all min-w-0 flex-1">{cmd.command}</code>
                           <button
                             onClick={() => handleCopy(cmd.command, `${item.id}-cmd-${cIdx}`)}
@@ -290,9 +290,9 @@ export default function ExamMode() {
                         </div>
                       ))}
                       {item.tags && (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1.5">
                           {item.tags.map(tag => (
-                            <span key={tag} className="px-2 py-0.5 bg-gray-200 text-gray-600 rounded text-xs">{tag}</span>
+                            <span key={tag} className="px-2.5 py-1 bg-gray-200 text-gray-600 rounded-lg text-xs">{tag}</span>
                           ))}
                         </div>
                       )}
@@ -305,7 +305,7 @@ export default function ExamMode() {
         </div>
 
         <div className="w-80 border-l border-gray-200 overflow-y-auto bg-gray-50 p-4 flex-shrink-0 no-print">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <Clock className="w-3 h-3" />
             Exam Notes
           </h2>
@@ -313,7 +313,7 @@ export default function ExamMode() {
             value={notes}
             onChange={handleNotesChange}
             placeholder="Type exam notes here..."
-            className="w-full h-[calc(100vh-120px)] bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-700 placeholder-gray-400 resize-none focus:outline-none focus:border-accent-primary"
+            className="w-full h-[calc(100vh-120px)] bg-white border border-gray-300 rounded-xl p-3.5 text-sm text-gray-700 placeholder-gray-400 resize-none focus:outline-none focus:border-accent-gold focus:ring-1 focus:ring-accent-gold/20 transition-all"
           />
         </div>
       </div>
